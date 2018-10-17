@@ -6,7 +6,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // === DEFINITIONS =====================================================
 
-    SetupName = "ThermoMaster";
+    SetupName = "TheTropicalRiver";
 
     // --- Pathes
     filesep = QString(QDir::separator());

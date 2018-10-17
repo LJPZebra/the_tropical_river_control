@@ -7,6 +7,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QDebug>
+#include <math.h>
 
 #include <QTime>
 #include <QTimer>

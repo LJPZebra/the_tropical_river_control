@@ -1,10 +1,10 @@
 #!/bin/bash
 
 set -e
-qmake GUI/Fishy.pro
+qmake GUI/TheTropicalRiver.pro
 make
 cd build
-./Fishy
+./TheTropicalRiver
 cd ..
 
 
