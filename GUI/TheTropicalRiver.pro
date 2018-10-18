@@ -11,11 +11,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets serialport printsupport
 DESTDIR=build
 OBJECTS_DIR=build
 MOC_DIR=build
+UI_DIR=build
 
-QMAKE_CXXFLAGS_RELEASE -= -O2
-QMAKE_CXXFLAGS_RELEASE += -O3
-
-QMAKE_LFLAGS_RELEASE -= -O1
 
 TARGET = TheTropicalRiver 
 TEMPLATE = app

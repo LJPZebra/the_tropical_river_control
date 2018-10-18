@@ -18,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Run
     SaveRate = 10;              // Image saving rate (Hz)
+    //connect(ui->fps, SIGNAL(valueChanged), [this]() {SaveRate = 10;});
+    //connect(ui->fps, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int) {SaveRate = 10;});
     nRun = 0;
     nFrame = 0;
     ImgComment = QString();
@@ -32,7 +34,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // --- Main window
 
     ui->setupUi(this);
-    this->setWindowFlags(Qt::FramelessWindowHint);
     this->setWindowTitle(SetupName);
 
     // --- Set data path ------------------------
@@ -70,46 +71,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // Thread info
     qInfo().nospace() << THREAD << "Mainwindow lives in thread: " << QThread::currentThreadId();
 
-    // --- Plots --------------------------------
-
-    QColor Col = Qt::darkCyan;
-
-    // Define graphs
-    ui->PlotLeft->addGraph();
-    ui->PlotLeft->graph(0)->setPen(QPen(Col));
-    ui->PlotLeft->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, Col,Col, 3));
-    ui->PlotLeft->addGraph();
-    ui->PlotLeft->graph(1)->setPen(QPen(Qt::red));
-    ui->PlotLeft->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
-
-    ui->PlotRight->addGraph();
-    ui->PlotRight->graph(0)->setPen(QPen(Col));
-    ui->PlotRight->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, Col,Col, 3));
-    ui->PlotRight->addGraph();
-    ui->PlotRight->graph(1)->setPen(QPen(Qt::red));
-    ui->PlotRight->graph(1)->setBrush(QBrush(QColor(255, 0, 0, 20)));
-
-    // Configure right and top axis to show ticks but no labels
-    ui->PlotLeft->xAxis2->setVisible(true);
-    ui->PlotLeft->xAxis2->setTickLabels(false);
-    ui->PlotLeft->yAxis2->setVisible(true);
-    ui->PlotLeft->yAxis2->setTickLabels(false);
-
-    ui->PlotRight->xAxis2->setVisible(true);
-    ui->PlotRight->xAxis2->setTickLabels(false);
-    ui->PlotRight->yAxis2->setVisible(true);
-    ui->PlotRight->yAxis2->setTickLabels(false);
-
-    // Make left and bottom axes always transfer their ranges to right and top axes:
-    connect(ui->PlotLeft->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->PlotLeft->xAxis2, SLOT(setRange(QCPRange)));
-    connect(ui->PlotLeft->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->PlotLeft->yAxis2, SLOT(setRange(QCPRange)));
-
-    connect(ui->PlotRight->xAxis, SIGNAL(rangeChanged(QCPRange)), ui->PlotRight->xAxis2, SLOT(setRange(QCPRange)));
-    connect(ui->PlotRight->yAxis, SIGNAL(rangeChanged(QCPRange)), ui->PlotRight->yAxis2, SLOT(setRange(QCPRange)));
-
-    // Default target values
-    TargetLeftValue = ui->TargetLeft->text().toDouble();
-    TargetRightValue = ui->TargetRight->text().toDouble();
 
     // === Camera ==========================================================
 
@@ -130,13 +91,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->Snapshot, SIGNAL(clicked()), this, SLOT(snapshot()));
     connect(ui->SpawningDate, SIGNAL(dateChanged(QDate)), this, SLOT(updateAge(QDate)));
 
-    connect(ui->Regulation, SIGNAL(released()), this, SLOT(setRegulation()));
-    connect(ui->setTargets, SIGNAL(released()), this, SLOT(setTargets()));
+    //connect(Camera, SIGNAL(checkFrameRate(float)), ui->trueFPS, SLOT(setText(QString::number(float))));
 
-    connect(ui->LightValue, SIGNAL(editingFinished()), this, SLOT(setLight()));
-    connect(ui->Pcoeff, SIGNAL(editingFinished()), this, SLOT(setP()));
-    connect(ui->Icoeff, SIGNAL(editingFinished()), this, SLOT(setI()));
-    connect(ui->Dcoeff, SIGNAL(editingFinished()), this, SLOT(setD()));
 
     // === Timers ==========================================================
 
@@ -166,7 +122,7 @@ void MainWindow::UpdateMessage() {
 
         switch (MSG.type) {
         case QtDebugMsg:
-            cout << MSG.text.toStdString() << endl;
+           // cout << MSG.text.toStdString() << endl;
             break;
         case QtInfoMsg:
             S = "<" + MSG.css + ">" + MSG.text + "</p>" ;
@@ -322,7 +278,7 @@ void MainWindow::readSerial() {
         if (res[i].left(4)=="Data") {
 
             QStringList Data = res[i].mid(5).split(" ", QString::SkipEmptyParts);
-            setTemperatures(Data);
+            //setTemperatures(Data);
 
         } else {
 
@@ -359,6 +315,7 @@ void MainWindow::ArmCamera() {
     Camera->X2 = ui->X2->text().toFloat();
     Camera->Y1 = ui->Y1->text().toFloat();
     Camera->Y2 = ui->Y2->text().toFloat();
+    Camera->frameRate = ui->fps->text().toFloat();
 
     // Camera->ROI.setRect(0,200,1280,600);
 
@@ -370,7 +327,9 @@ void MainWindow::ArmCamera() {
 void MainWindow::UpdateCamera() {
 
     Camera->stopCamera();
+    cout << "test1" << endl;
     this->ArmCamera();
+    cout << "test1" << endl;
 
 }
 
@@ -432,90 +391,9 @@ void MainWindow::snapshot() {
 
 }
 
-/* ====================================================================== *\
-|    LIGHT                                                                 |
-\* ====================================================================== */
 
-void MainWindow::setLight() {
 
-    // Update light
-    send("light " + QString("%1").arg(round(ui->LightValue->value()*2.55)));
-}
 
-/* ====================================================================== *\
-|    TEMPERATURES                                                          |
-\* ====================================================================== */
-
-void MainWindow::setTargets() {
-
-    QString cmd = "set " + ui->TargetLeft->text() + " " + ui->TargetRight->text();
-    send(cmd);
-
-    TargetLeftValue = ui->TargetLeft->text().toDouble();
-    TargetRightValue = ui->TargetRight->text().toDouble();
-
-}
-
-void MainWindow::setRegulation() {
-
-    if (ui->Regulation->isChecked()) { send(QString("start")); }
-    else { send(QString("stop")); }
-
-}
-
-void MainWindow::setTemperatures(QStringList Data) {
-
-    // --- Update text displays
-    ui->TempLeft->setText(Data[1]);
-    ui->TempRight->setText(Data[2]);
-
-    // --- Update plot
-
-    // Update vectors
-    Time.append(Data[0].toDouble()/1e6);
-    TempLeft.append(Data[1].toDouble());
-    TempRight.append(Data[2].toDouble());
-    if (ui->Regulation->isChecked()) {
-        TargetLeft.append(TargetLeftValue);
-        TargetRight.append(TargetRightValue);
-    } else {
-        TargetLeft.append(0);
-        TargetRight.append(0);
-    }
-
-    while (Time.count()>200) {
-        Time.removeFirst();
-        TempLeft.removeFirst();
-        TempRight.removeFirst();
-        TargetLeft.removeFirst();
-        TargetRight.removeFirst();
-    }
-
-    // Display plot
-    ui->PlotLeft->graph(0)->setData(Time, TempLeft);
-    ui->PlotLeft->graph(1)->setData(Time, TargetLeft);
-    ui->PlotRight->graph(0)->setData(Time, TempRight);
-    ui->PlotRight->graph(1)->setData(Time, TargetRight);
-
-    ui->PlotLeft->xAxis->setRange(Time.first()-0.5, Time.last()+0.5);
-    ui->PlotRight->xAxis->setRange(Time.first()-0.5, Time.last()+1);
-    ui->PlotLeft->yAxis->setRange(15,40);
-    ui->PlotRight->yAxis->setRange(15,40);
-
-    // ui->PlotLeft->rescaleAxes();
-
-    ui->PlotLeft->replot();
-    ui->PlotRight->replot();
-
-}
-
-/* ====================================================================== *\
-|    PID COEFFICIENTS                                                      |
-\* ====================================================================== */
-
-void MainWindow::setP() { send("P " + QString("%1").arg(ui->Pcoeff->value())); }
-void MainWindow::setI() { send("I " + QString("%1").arg(ui->Icoeff->value())); }
-void MainWindow::setD() { send("D " + QString("%1").arg(ui->Dcoeff->value())); }
 
 /* ====================================================================== *\
 |    PROTOCOLS                                                             |

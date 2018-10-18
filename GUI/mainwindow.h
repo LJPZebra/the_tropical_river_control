@@ -43,7 +43,6 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    void setTemperatures(QStringList);
 
 public slots:
 
@@ -75,17 +74,6 @@ public slots:
     void snapshot();
     void GrabLoop();
 
-    // Lighting
-    void setLight();
-
-    // Temperature
-    void setTargets();
-    void setRegulation();
-
-    // PID coefficients
-    void setP();
-    void setI();
-    void setD();
 
 private:
 

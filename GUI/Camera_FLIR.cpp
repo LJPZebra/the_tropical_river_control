@@ -57,43 +57,45 @@ void LowLevel_FLIR::display_info() {
 
     // --- Device info
 
-    INodeMap &nodeMap = pCam->GetTLDeviceNodeMap();
-    CCategoryPtr category = nodeMap.GetNode("DeviceInformation");
+  INodeMap &nodeMap = pCam->GetTLDeviceNodeMap();
+  CCategoryPtr category = nodeMap.GetNode("DeviceInformation");
 
-    if (IsAvailable(category) && IsReadable(category)) {
+  if (IsAvailable(category) && IsReadable(category)) {
 
-        FeatureList_t features;
-        category->GetFeatures(features);
+      FeatureList_t features;
+      category->GetFeatures(features);
 
-        qInfo().nospace() << "<table class='cameraInfo'>"
-                << "<tr>"
-                << "<th rowspan=3>Camera " << CamId << "</th>"
-                << "<td>" << features.at(1)->GetName() << "</td>"       // DeviceSerialNumber
-                << "<td>" << features.at(1)->ToString() << "</td>"
-                << "</tr><tr>"
-                << "<td>" << features.at(3)->GetName() << "</td>"       // DeviceModelName
-                << "<td>" << features.at(3)->ToString() << "</td>"
-                << "</tr><tr>"
-                << "<td>" << features.at(12)->GetName() << "</td>"      // DeviceCurrentSpeed
-                << "<td>" << features.at(12)->ToString() << "</td>"
-                << "</tr>"
-                << "</table>";
+      qInfo().nospace() << "<table class='cameraInfo'>"
+              << "<tr>"
+              << "<th rowspan=3>Camera " << CamId << "</th>"
+              << "<td>" << features.at(1)->GetName() << "</td>"       // DeviceSerialNumber
+              << "<td>" << features.at(1)->ToString() << "</td>"
+              << "</tr><tr>"
+              << "<td>" << features.at(3)->GetName() << "</td>"       // DeviceModelName
+              << "<td>" << features.at(3)->ToString() << "</td>"
+              << "</tr><tr>"
+              << "<td>" << features.at(12)->GetName() << "</td>"      // DeviceCurrentSpeed
+              << "<td>" << features.at(12)->ToString() << "</td>"
+              << "</tr>"
+              << "</table>";
 
-    } else { qWarning() << "Device info not available"; }
+  } else { qWarning() << "Device info not available"; }
 
 }
 
 /* === Frame grabber ================================================= */
 
 void LowLevel_FLIR::grab() {
+  // Thread info
+  qInfo().nospace() << THREAD << qPrintable(CamName) << " lives in thread: " << QThread::currentThreadId();
 
-    // Thread info
-    qInfo().nospace() << THREAD << qPrintable(CamName) << " lives in thread: " << QThread::currentThreadId();
+  // --- Camera & nodemaps definitions -----------------------------------
 
-    // --- Camera & nodemaps definitions -----------------------------------
-
-    pCam->Init();
+cout << "coucou" << endl;
+  pCam->Init();
+cout << "coucou1" << endl;
     INodeMap &nodeMap = pCam->GetNodeMap();
+cout << "coucou2" << endl;
     pCam->GainAuto.SetValue(Spinnaker::GainAutoEnums::GainAuto_Off);
 
     // --- Configure ChunkData ---------------------------------------------
@@ -188,11 +190,24 @@ void LowLevel_FLIR::grab() {
     ExposureTime->SetValue(Exposure);
     qInfo() << "Exposure time set to " << Exposure/1000 << "ms";
 
+
+    // === Framerate ===========================
+
+    /*CFloatPtr ptrAcquisitionFrameRate = nodeMap.GetNode("AcquisitionFrameRate");
+    if (IsAvailable(ptrAcquisitionFrameRate) && IsWritable(ptrAcquisitionFrameRate)){
+      ptrAcquisitionFrameRate->SetValue(frameRate);
+      //readFrameRate = static_cast<float>(ptrAcquisitionFrameRate->GetValue());
+      //cout << frameRate << '\n';
+    }*/
+      //emit checkFrameRate(readFrameRate);
+
+      //cout << frameRate << '\n';
     // === Image size ===========================
 
     CIntegerPtr pWidth = nodeMap.GetNode("Width");
     if (IsAvailable(pWidth) && IsWritable(pWidth)) { pWidth->SetValue(Width); }
 
+cout << Width << '\n';
     CIntegerPtr pHeight = nodeMap.GetNode("Height");
     if (IsAvailable(pHeight) && IsWritable(pHeight)) { pHeight->SetValue(Height); }
 
@@ -280,8 +295,10 @@ void Camera_FLIR::newCamera() {
     Camera->OffsetY = Y1;
     Camera->Width = X2-X1;
     Camera->Height = Y2-Y1;
+    Camera->frameRate = frameRate;
     tRefDisp = -1;
     tRefSave = -1;
+
 
     // Change camera thread
     t_Cam = new QThread;
@@ -328,9 +345,7 @@ void Camera_FLIR::newImage(Image_FLIR FImg) {
 /* === Stop/Restart camera ============================================== */
 
 void Camera_FLIR::stopCamera() {
-
     Camera->grabState = false;
     t_Cam->quit();
     t_Cam->wait();
-
 }
