@@ -315,7 +315,7 @@ void MainWindow::ArmCamera() {
     Camera->X2 = ui->X2->text().toFloat();
     Camera->Y1 = ui->Y1->text().toFloat();
     Camera->Y2 = ui->Y2->text().toFloat();
-    //Camera->frameRate = ui->fps->text().toFloat();
+    Camera->frameRate = ui->fps->text().toFloat();
 
     // Camera->ROI.setRect(0,200,1280,600);
 
@@ -327,9 +327,7 @@ void MainWindow::ArmCamera() {
 void MainWindow::UpdateCamera() {
 
     Camera->stopCamera();
-    cout << "test1" << endl;
     this->ArmCamera();
-    cout << "test1" << endl;
 
 }
 

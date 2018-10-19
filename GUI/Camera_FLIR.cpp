@@ -190,15 +190,15 @@ void LowLevel_FLIR::grab() {
 
     // === Framerate ===========================
 
-    /*CFloatPtr ptrAcquisitionFrameRate = nodeMap.GetNode("AcquisitionFrameRate");
+    CFloatPtr ptrAcquisitionFrameRate = nodeMap.GetNode("AcquisitionFrameRate");
     if (IsAvailable(ptrAcquisitionFrameRate) && IsWritable(ptrAcquisitionFrameRate)){
       ptrAcquisitionFrameRate->SetValue(frameRate);
-      //readFrameRate = static_cast<float>(ptrAcquisitionFrameRate->GetValue());
-      //cout << frameRate << '\n';
-    }*/
-      //emit checkFrameRate(readFrameRate);
+      readFrameRate = static_cast<float>(ptrAcquisitionFrameRate->GetValue());
+    }
+      emit checkFrameRate(readFrameRate);
 
-      //cout << frameRate << '\n';
+      cout << frameRate << '\n';
+
     // === Image size ===========================
 
     CIntegerPtr pWidth = nodeMap.GetNode("Width");
@@ -235,7 +235,13 @@ void LowLevel_FLIR::grab() {
             // --- Get image and convert to QImage
             unsigned char* Raw = (unsigned char*)pImg->GetData();
             FImg.Img = QImage(Raw, pImg->GetWidth(), pImg->GetHeight(), QImage::Format_Indexed8);
-            for (unsigned int i=0 ; i<=255; i++) { FImg.Img.setColor(i, qRgb(i,i,i)); }
+
+
+            // Set colors of the QImage
+                for (unsigned int i=0 ; i<=255; i++) { FImg.Img.setColor(i, qRgb(i,i,i)); }
+
+            // Mirror the image
+            FImg.Img = FImg.Img.mirrored(true, true);
 
             // --- Get ChunkData
             ChunkData chunkData = pImg->GetChunkData();
@@ -291,6 +297,7 @@ void Camera_FLIR::newCamera() {
     Camera->OffsetY = Y1;
     Camera->Width = X2-X1;
     Camera->Height = Y2-Y1;
+    Camera->frameRate = frameRate;
     tRefDisp = -1;
     tRefSave = -1;
 
