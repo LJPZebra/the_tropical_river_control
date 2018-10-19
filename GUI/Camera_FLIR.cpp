@@ -91,11 +91,8 @@ void LowLevel_FLIR::grab() {
 
   // --- Camera & nodemaps definitions -----------------------------------
 
-cout << "coucou" << endl;
-  pCam->Init();
-cout << "coucou1" << endl;
+    pCam->Init();
     INodeMap &nodeMap = pCam->GetNodeMap();
-cout << "coucou2" << endl;
     pCam->GainAuto.SetValue(Spinnaker::GainAutoEnums::GainAuto_Off);
 
     // --- Configure ChunkData ---------------------------------------------
@@ -207,7 +204,6 @@ cout << "coucou2" << endl;
     CIntegerPtr pWidth = nodeMap.GetNode("Width");
     if (IsAvailable(pWidth) && IsWritable(pWidth)) { pWidth->SetValue(Width); }
 
-cout << Width << '\n';
     CIntegerPtr pHeight = nodeMap.GetNode("Height");
     if (IsAvailable(pHeight) && IsWritable(pHeight)) { pHeight->SetValue(Height); }
 
@@ -249,7 +245,7 @@ cout << Width << '\n';
             FImg.gain = (qint64) chunkData.GetGain();
 
             emit newImage(FImg);
-            qDebug() << FImg.timestamp;
+//            qDebug() << FImg.timestamp;
 
         }
 
@@ -295,7 +291,6 @@ void Camera_FLIR::newCamera() {
     Camera->OffsetY = Y1;
     Camera->Width = X2-X1;
     Camera->Height = Y2-Y1;
-    Camera->frameRate = frameRate;
     tRefDisp = -1;
     tRefSave = -1;
 

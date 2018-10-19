@@ -55,9 +55,7 @@ public:
     int64_t OffsetY;
     int64_t Width;
     int64_t Height;
-    float frameRate;
     bool grabState;
-    float readFrameRate;
 
 public slots:
 
@@ -67,7 +65,6 @@ public slots:
 signals:
 
     void newImage(Image_FLIR);
-    void checkFrameRate(float);
 private:
 
     // --- Internal FLIR properties
@@ -88,16 +85,15 @@ class Camera_FLIR : public QObject {
 
 public:
 
-    void newCamera();
 
     // Constructor and destructor
     Camera_FLIR(int);
     ~Camera_FLIR();
 
+    void newCamera();
     float DisplayRate;
     float Exposure;
     int X1, X2, Y1, Y2;
-    float frameRate;
 
     int CamId;
     QString CamName;
