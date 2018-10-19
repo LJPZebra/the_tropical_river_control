@@ -77,7 +77,6 @@ public:
     int64_t Height;
     float frameRate;
     bool grabState;
-    float readFrameRate;
 
 public slots:
 
@@ -94,19 +93,14 @@ public slots:
     void grab();
 
 
-
 signals:
 
-  /**
-    *@brief Emit a signal with the framerate when a frame is grabbed 
-    *@note To be implemented and tested
-    */
-    void checkFrameRate(float);
 
   /**
     *@brief Emit a signal with the Image_FLIR structure when a frame is grabbed 
     */
     void newImage(Image_FLIR);
+    void exposureSaturation(int); 
 private:
 
     // --- Internal FLIR properties
@@ -183,7 +177,7 @@ signals:
       *@brief Send a QPixmap image to be displayed
     */
     void newImageForDisplay(QPixmap);
-
+    void exposureSaturation(int);
 private:
 
     LowLevel_FLIR *Camera;

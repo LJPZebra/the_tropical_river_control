@@ -169,6 +169,14 @@ void LowLevel_FLIR::grab() {
 
     qInfo() << "Acquisition mode set to continuous";
 
+    // === Framerate ===========================
+
+    CFloatPtr ptrAcquisitionFrameRate = nodeMap.GetNode("AcquisitionFrameRate");
+    if (IsAvailable(ptrAcquisitionFrameRate) && IsWritable(ptrAcquisitionFrameRate)){
+      ptrAcquisitionFrameRate->SetValue(frameRate);
+      qInfo() << "Framerate set to " << frameRate << "fps";
+    }
+
     // === Exposure time ========================
 
     // Disable auto exposure
@@ -181,23 +189,16 @@ void LowLevel_FLIR::grab() {
     // Ensure that exposure time does not exceed the maximum
     CFloatPtr ExposureTime = nodeMap.GetNode("ExposureTime");
     const double ExposureMax = ExposureTime->GetMax();
-    if (Exposure > ExposureMax) { Exposure = ExposureMax; }
+    if (Exposure > ExposureMax) {
+      Exposure = ExposureMax;
+      emit exposureSaturation(round(Exposure/1000.));
+    }
 
     // Apply exposure time
     ExposureTime->SetValue(Exposure);
     qInfo() << "Exposure time set to " << Exposure/1000 << "ms";
 
 
-    // === Framerate ===========================
-
-    CFloatPtr ptrAcquisitionFrameRate = nodeMap.GetNode("AcquisitionFrameRate");
-    if (IsAvailable(ptrAcquisitionFrameRate) && IsWritable(ptrAcquisitionFrameRate)){
-      ptrAcquisitionFrameRate->SetValue(frameRate);
-      readFrameRate = static_cast<float>(ptrAcquisitionFrameRate->GetValue());
-    }
-      emit checkFrameRate(readFrameRate);
-
-      cout << frameRate << '\n';
 
     // === Image size ===========================
 
@@ -229,6 +230,7 @@ void LowLevel_FLIR::grab() {
             qWarning() << "Image incomplete with image status " << pImg->GetImageStatus();
 
         } else {
+          
 
             Image_FLIR FImg;
 
@@ -238,7 +240,7 @@ void LowLevel_FLIR::grab() {
 
 
             // Set colors of the QImage
-                for (unsigned int i=0 ; i<=255; i++) { FImg.Img.setColor(i, qRgb(i,i,i)); }
+            for (unsigned int i=0 ; i<=255; i++) { FImg.Img.setColor(i, qRgb(i,i,i)); }
 
             // Mirror the image
             FImg.Img = FImg.Img.mirrored(true, true); //IF DELETED THE CAMERA CANNOT BE RESTART
@@ -250,8 +252,9 @@ void LowLevel_FLIR::grab() {
             FImg.frameId = (qint64) chunkData.GetFrameID();
             FImg.gain = (qint64) chunkData.GetGain();
 
+            int expo = (qint64) chunkData.GetExposureTime();
+//cout << FImg.timestamp << '\t' << expo << '\t' << Exposure <<  endl;
             emit newImage(FImg);
-//            qDebug() << FImg.timestamp;
 
         }
 
@@ -302,6 +305,7 @@ void Camera_FLIR::newCamera() {
     tRefSave = -1;
 
 
+
     // Change camera thread
     t_Cam = new QThread;
     Camera->moveToThread(t_Cam);
@@ -311,17 +315,21 @@ void Camera_FLIR::newCamera() {
 
     // Connections
     connect(t_Cam, SIGNAL(started()), Camera, SLOT(grab()));
+    connect(Camera, SIGNAL(exposureSaturation(int)), this, SIGNAL(exposureSaturation(int)));
     connect(Camera, SIGNAL(newImage(Image_FLIR)), this, SLOT(newImage(Image_FLIR)));
     connect(t_Cam, &QThread::finished, Camera, &QObject::deleteLater);
 
     // Start the camera
     t_Cam->start();
-
 }
 
 /* === Information display =========================================== */
 
-void Camera_FLIR::display_info() { Camera->display_info(); }
+void Camera_FLIR::display_info() { 
+  //Update GUI
+  Camera->display_info(); 
+  }
+
 
 /* === New image received ============================================ */
 
@@ -351,3 +359,4 @@ void Camera_FLIR::stopCamera() {
     t_Cam->quit();
     t_Cam->wait();
 }
+

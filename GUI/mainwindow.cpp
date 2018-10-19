@@ -81,6 +81,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // === Connections =====================================================
 
+    connect(Camera, SIGNAL(exposureSaturation(int)), ui->Exposure, SLOT(setValue(int)));
     connect(ui->CheckSerial, SIGNAL(released()), this, SLOT(checkSerial()));
 
     connect(ui->ProjectPathButton, SIGNAL(clicked()), this, SLOT(BrowseProject()));
@@ -321,14 +322,13 @@ void MainWindow::ArmCamera() {
 
     // Create new camera
     Camera->newCamera();
-
 }
 
 void MainWindow::UpdateCamera() {
 
     Camera->stopCamera();
     this->ArmCamera();
-
+    cout << Camera->Exposure << endl;
 }
 
 void MainWindow::updateDisplay(QPixmap pix) { ui->Image->setPixmap(pix); }
