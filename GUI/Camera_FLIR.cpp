@@ -241,7 +241,7 @@ void LowLevel_FLIR::grab() {
                 for (unsigned int i=0 ; i<=255; i++) { FImg.Img.setColor(i, qRgb(i,i,i)); }
 
             // Mirror the image
-            FImg.Img = FImg.Img.mirrored(true, true);
+            FImg.Img = FImg.Img.mirrored(true, true); //IF DELETED THE CAMERA CANNOT BE RESTART
 
             // --- Get ChunkData
             ChunkData chunkData = pImg->GetChunkData();
