@@ -107,8 +107,8 @@ private:
     QString ImgComment;
 
     // Protocols
-    QVector<QString> Protocol;
-    QTime ProtocolTime;
+    QVector<QString> protocolInstructions;
+    QTime protocolTime;
     QTimer *timerProtocol;
     QString comment;
 

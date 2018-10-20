@@ -406,9 +406,8 @@ void MainWindow::BrowseProtocol() {
 
 void MainWindow::toggleProtocol(bool b) {
 
-    if (ui->ProtocolRun->isChecked()) {
+    if (ui->ProtocolRun->isChecked()) { // If button pressed one time to trigger the protocol start
 
-        // --- Load protocol
         QFile *PFile = new QFile(ui->ProtocolPath->text());
 
         if (!PFile->open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -417,33 +416,28 @@ void MainWindow::toggleProtocol(bool b) {
         };
 
         QTextStream stream(PFile);
-        Protocol.clear();
+        protocolInstructions.clear();
         QString line;
-        while (stream.readLineInto(&line)) {
-
-            // --- Remove empty lines and comments
-            if (line.isEmpty() || line.left(1) == "#") { continue; }
-
-            Protocol.append(line);
+        while (stream.readLineInto(&line)) { // Remove empty lines
+            if (line.isEmpty() || line.left(1) == "#"){
+               continue; 
+            }
+            protocolInstructions.append(line);
         }
 
         // --- Start protocol
         ui->ProtocolTime->setStyleSheet("QLabel { color: firebrick;}");
-        ProtocolTime.start();
+        protocolTime.start();
         timerProtocol->start(1000);
         ProtoLoop();
+    } 
+    
+    else { // If button pressed a second time when the protocol is running
 
-    } else {
-
-        // Clear Protocol
         ui->ProtocolTime->setText("00:00:00");
         ui->ProtocolTime->setStyleSheet("QLabel { color: black;}");
-        Protocol.clear();
+        protocolInstructions.clear();
         timerProtocol->stop();
-
-        // Stop camera
-        // timerGrab->stop();
-
     }
 
 }
@@ -452,7 +446,7 @@ void MainWindow::ProtocolLoop() {
     // Synchronous loop (every 1s) for display
 
     // Ellapsed time
-    int m = ProtocolTime.elapsed();
+    int m = protocolTime.elapsed();
     int hours = floor(m/3600000); m -= hours*3600000;
     int minutes = floor(m/60000); m -= minutes*60000;
     int seconds = floor(m/1000);
@@ -467,7 +461,7 @@ void MainWindow::ProtoLoop() {
 // Asynchronous loop for processing protocol commands
 
     // --- End of protocol
-    if (!Protocol.count()) {
+    if (!protocolInstructions.count()) {
         ui->ProtocolRun->setChecked(false);
         return;
     }
@@ -477,7 +471,7 @@ void MainWindow::ProtoLoop() {
     bool bcont = true;
 
     // --- Parse first command
-    QStringList list = Protocol[0].split(":");
+    QStringList list = protocolInstructions[0].split(":");
 
     if (list.at(0)=="print") {
 
@@ -537,7 +531,7 @@ void MainWindow::ProtoLoop() {
         // --- WAIT -----------------------------
 
         QTimer::singleShot(list.at(1).toInt(), this, SLOT(ProtoLoop()));
-        Protocol.removeFirst();
+        protocolInstructions.removeFirst();
         return;
 
     } else if (list.at(0)=="run") {
@@ -553,12 +547,12 @@ void MainWindow::ProtoLoop() {
 
     } else {
 
-        qDebug() << "Unknown command:" << Protocol[0];
+        qDebug() << "Unknown command:" << protocolInstructions[0];
         return;
     }
 
     // --- Remove first command
-    Protocol.removeFirst();
+    protocolInstructions.removeFirst();
 
     // --- Continue
     if (bcont) { ProtoLoop(); }
