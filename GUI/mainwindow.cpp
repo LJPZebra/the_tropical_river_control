@@ -16,10 +16,6 @@ MainWindow::MainWindow(QWidget *parent) :
     projPath = projPath.mid(0, projPath.toStdString().find_last_of(filesep.toStdString()));
     projPath = projPath.mid(0, projPath.toStdString().find_last_of(filesep.toStdString())) + filesep;
 
-    // Run
-    SaveRate = 10;              // Image saving rate (Hz)
-    //connect(ui->fps, SIGNAL(valueChanged), [this]() {SaveRate = 10;});
-    //connect(ui->fps, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int) {SaveRate = 10;});
     nRun = 0;
     nFrame = 0;
     ImgComment = QString();
@@ -76,18 +72,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
     qInfo() << TITLE_2 << "Camera";
 
-    // Initialize Camera
-    InitCamera();
+    // Initialize CameraNN
+    initCamera();
 
     // === Connections =====================================================
 
-    connect(Camera, SIGNAL(exposureSaturation(int)), ui->Exposure, SLOT(setValue(int)));
+    connect(Camera, SIGNAL(refreshParameters(int, int)), this, SLOT(parsingRefreshedParameters(int, int)));
     connect(ui->CheckSerial, SIGNAL(released()), this, SLOT(checkSerial()));
 
     connect(ui->ProjectPathButton, SIGNAL(clicked()), this, SLOT(BrowseProject()));
     connect(ui->Autoset, SIGNAL(clicked()), this, SLOT(autoset()));
-    connect(ui->ProtocolPathButton, SIGNAL(clicked()), this, SLOT(BrowseProtocol()));
-    connect(ui->ProtocolRun, SIGNAL(toggled(bool)), this, SLOT(toggleProtocol(bool)));
+    connect(ui->ProtocolPathButton, SIGNAL(clicked()), this, SLOT(browseProtocol()));
+    connect(ui->ProtocolRun, SIGNAL(toggled(bool)), this, SLOT(readingProtocolFile(bool)));
 
     connect(ui->Snapshot, SIGNAL(clicked()), this, SLOT(snapshot()));
     connect(ui->SpawningDate, SIGNAL(dateChanged(QDate)), this, SLOT(updateAge(QDate)));
@@ -100,7 +96,7 @@ MainWindow::MainWindow(QWidget *parent) :
     /*
     // --- Protocol timer
     timerProtocol = new QTimer(this);
-    connect(timerProtocol, SIGNAL(timeout()), this, SLOT(ProtocolLoop()));
+    connect(timerProtocol, SIGNAL(timeout()), this, SLOT(displayingProtocolTime()));
     */
 
     // === Startup =========================================================
@@ -113,6 +109,13 @@ MainWindow::MainWindow(QWidget *parent) :
 /* ====================================================================== *\
 |    MESSAGES                                                              |
 \* ====================================================================== */
+
+void MainWindow::parsingRefreshedParameters(int param1, int param2) {
+    ui->Exposure->setValue(param1);
+    ui->fps->setValue(param2);
+    saveRate = param2;
+}
+
 
 void MainWindow::UpdateMessage() {
 
@@ -296,21 +299,19 @@ void MainWindow::readSerial() {
 |    CAMERA                                                                |
 \* ====================================================================== */
 
-void MainWindow::InitCamera() {
+void MainWindow::initCamera() {
 
     Camera = new Camera_FLIR(0);
 
-    // --- Connections
-    connect(ui->UpdateCamera, SIGNAL(released()), this, SLOT(UpdateCamera()));
+    connect(ui->UpdateCamera, SIGNAL(released()), this, SLOT(updateCamera()));
     connect(Camera, SIGNAL(newImageForDisplay(QPixmap)), this, SLOT(updateDisplay(QPixmap)));
 
-    this->ArmCamera();
+    this->armCamera();
 
 }
 
-void MainWindow::ArmCamera() {
+void MainWindow::armCamera() {
 
-    // Update Settings
     Camera->Exposure = ui->Exposure->text().toFloat();
     Camera->X1 = ui->X1->text().toFloat();
     Camera->X2 = ui->X2->text().toFloat();
@@ -318,17 +319,13 @@ void MainWindow::ArmCamera() {
     Camera->Y2 = ui->Y2->text().toFloat();
     Camera->frameRate = ui->fps->text().toFloat();
 
-    // Camera->ROI.setRect(0,200,1280,600);
-
-    // Create new camera
     Camera->newCamera();
 }
 
-void MainWindow::UpdateCamera() {
+void MainWindow::updateCamera() {
 
     Camera->stopCamera();
-    this->ArmCamera();
-    cout << Camera->Exposure << endl;
+    this->armCamera();
 }
 
 void MainWindow::updateDisplay(QPixmap pix) { ui->Image->setPixmap(pix); }
@@ -397,14 +394,14 @@ void MainWindow::snapshot() {
 |    PROTOCOLS                                                             |
 \* ====================================================================== */
 
-void MainWindow::BrowseProtocol() {
+void MainWindow::browseProtocol() {
 
     QString pfile = QFileDialog::getOpenFileName(this, tr("Open protocol file"), ui->ProjectPath->text() + "Data" + filesep + "Protocols", "Protocol files (*.protocol);; All files (*.*)");
     if (pfile.length()) { ui->ProtocolPath->setText(pfile); }
 
 }
 
-void MainWindow::toggleProtocol(bool b) {
+void MainWindow::readingProtocolFile(bool b) {
 
     if (ui->ProtocolRun->isChecked()) { // If button pressed one time to trigger the protocol start
 
@@ -429,7 +426,7 @@ void MainWindow::toggleProtocol(bool b) {
         ui->ProtocolTime->setStyleSheet("QLabel { color: firebrick;}");
         protocolTime.start();
         timerProtocol->start(1000);
-        ProtoLoop();
+        parsingProtocolInstructions();
     } 
     
     else { // If button pressed a second time when the protocol is running
@@ -442,7 +439,7 @@ void MainWindow::toggleProtocol(bool b) {
 
 }
 
-void MainWindow::ProtocolLoop() {
+void MainWindow::displayingProtocolTime() {
     // Synchronous loop (every 1s) for display
 
     // Ellapsed time
@@ -457,32 +454,23 @@ void MainWindow::ProtocolLoop() {
 
 }
 
-void MainWindow::ProtoLoop() {
+void MainWindow::parsingProtocolInstructions() {
 // Asynchronous loop for processing protocol commands
 
-    // --- End of protocol
-    if (!protocolInstructions.count()) {
+    if (!protocolInstructions.count()) { // End of the protocol
         ui->ProtocolRun->setChecked(false);
         return;
     }
 
-    // Loop by default
-    bool brem = true;
     bool bcont = true;
 
-    // --- Parse first command
     QStringList list = protocolInstructions[0].split(":");
 
-    if (list.at(0)=="print") {
-
-        // --- PRINT ----------------------------
-
+    if (list.at(0)=="print") { // Parse print instructions
         qInfo() << qPrintable(list.at(1));
-
-    } else if (list.at(0)=="data") {
-
-        // --- DATA ---------------------------
-
+    }
+     
+    else if (list.at(0)=="data") { // Parse data instructions
         if (list.at(1)=="create directory") {
 
             // Reset run number
@@ -504,49 +492,38 @@ void MainWindow::ProtoLoop() {
                 stream << "Spawning_date\t" << ui->SpawningDate->date().toString("yyyy-MM-dd") << endl;
                 stream << "Age\t" << ui->Age->text() << endl;
             }
-
         }
+    }
 
-    } else if (list.at(0)=="camera") {
-
-        // --- CAMERA ---------------------------
-
+    else if (list.at(0)=="camera") { // Parse camera instrucions
         if (list.at(1)=="start") {
-
             nFrame = 0;
-            timerGrab->start(1000/SaveRate);
-
-        } else if (list.at(1)=="stop") {
-
-            timerGrab->stop();
-
-        } else if (list.at(1)=="comment") {
-
-            comment = list.at(2);
-
+            timerGrab->start(1000/saveRate);
         }
 
-    } else if (list.at(0)=="wait") {
+        else if (list.at(1)=="stop") {
+            timerGrab->stop();
+        }
+        else if (list.at(1)=="comment") {
+            comment = list.at(2);
+        }
+    }
 
-        // --- WAIT -----------------------------
-
-        QTimer::singleShot(list.at(1).toInt(), this, SLOT(ProtoLoop()));
+    else if (list.at(0)=="wait") { // Parse wait instructions
+        QTimer::singleShot(list.at(1).toInt(), this, SLOT(parsingProtocolInstructions()));
         protocolInstructions.removeFirst();
         return;
+    }
 
-    } else if (list.at(0)=="run") {
-
-        // --- RUN ------------------------------
-
+    else if (list.at(0)=="run") { // Parse run instructions
         // Set direction
         if (list.at(1)=="up") {  }
         if (list.at(1)=="down") {  }
-
         // Wait for the run end
         bcont = false;
+    }
 
-    } else {
-
+    else {
         qDebug() << "Unknown command:" << protocolInstructions[0];
         return;
     }
@@ -555,8 +532,7 @@ void MainWindow::ProtoLoop() {
     protocolInstructions.removeFirst();
 
     // --- Continue
-    if (bcont) { ProtoLoop(); }
-
+    if (bcont) { parsingProtocolInstructions(); }
 }
 
 

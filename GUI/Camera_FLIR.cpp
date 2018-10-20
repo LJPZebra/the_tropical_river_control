@@ -191,7 +191,6 @@ void LowLevel_FLIR::grab() {
     const double ExposureMax = ExposureTime->GetMax();
     if (Exposure > ExposureMax) {
       Exposure = ExposureMax;
-      emit exposureSaturation(round(Exposure/1000.));
     }
 
     // Apply exposure time
@@ -214,6 +213,7 @@ void LowLevel_FLIR::grab() {
     CIntegerPtr pOffsetY = nodeMap.GetNode("OffsetY");
     if (IsAvailable(pOffsetY) && IsWritable(pOffsetY)) { pOffsetY->SetValue(OffsetY); }
 
+    emit refreshParameters(round(Exposure/1000.), round(frameRate));
     // --- Acquire images --------------------------------------------------
 
     grabState = true;
@@ -315,7 +315,7 @@ void Camera_FLIR::newCamera() {
 
     // Connections
     connect(t_Cam, SIGNAL(started()), Camera, SLOT(grab()));
-    connect(Camera, SIGNAL(exposureSaturation(int)), this, SIGNAL(exposureSaturation(int)));
+    connect(Camera, SIGNAL(refreshParameters(int, int)), this, SIGNAL(refreshParameters(int, int)));
     connect(Camera, SIGNAL(newImage(Image_FLIR)), this, SLOT(newImage(Image_FLIR)));
     connect(t_Cam, &QThread::finished, Camera, &QObject::deleteLater);
 

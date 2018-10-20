@@ -53,21 +53,56 @@ public slots:
     void BrowseProject();
     void autoset();
 
-    // Protocols
-    void BrowseProtocol();
-    void toggleProtocol(bool);
-    void ProtoLoop();
-    void ProtocolLoop();
+
+    /**
+      *@brief parse the signal emit by the Camera to update the GUI
+    */
+    void parsingRefreshedParameters(int, int);
+
+    /**
+      *@brief open window to select the protocol file
+    */
+    void browseProtocol();
+
+    /**
+      *@brief read protocol file and start the protocol
+    */
+    void readingProtocolFile(bool);
+
+    /**
+      *@brief parse and execute protocol instructions
+      *Note bool not used to check
+    */
+    void parsingProtocolInstructions();
+
+    /**
+      *@brief display the protocol time in the GUI 
+    */
+    void displayingProtocolTime();
+
+    /**
+      *@brief reading protocol file ans start the protocol
+    */
     void updateAge(QDate);
 
     // Serial communication
     void checkSerial();
     void readSerial();
 
-    // Camera
-    void InitCamera();
-    void ArmCamera();
-    void UpdateCamera();
+    /**
+      *@brief create a new object camera with the input parameters
+    */
+    void initCamera();
+
+    /**
+      *@brief set the camera parameters and start the acquisition
+    */
+    void armCamera();
+    
+    /**
+      *@brief stop the running Camera and start a new Camera with the new input Parameters
+    */
+    void updateCamera();
     void updateDisplay(QPixmap);
 
     // Images
@@ -98,7 +133,7 @@ private:
     Camera_FLIR *Camera;
 
     // Run
-    int SaveRate;
+    int saveRate;
     QTimer *timerGrab;
     int nRun;
     qint64 nFrame;

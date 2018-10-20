@@ -100,7 +100,7 @@ signals:
     *@brief Emit a signal with the Image_FLIR structure when a frame is grabbed 
     */
     void newImage(Image_FLIR);
-    void exposureSaturation(int); 
+    void refreshParameters(int, int); 
 private:
 
     // --- Internal FLIR properties
@@ -177,7 +177,7 @@ signals:
       *@brief Send a QPixmap image to be displayed
     */
     void newImageForDisplay(QPixmap);
-    void exposureSaturation(int);
+    void refreshParameters(int, int);
 private:
 
     LowLevel_FLIR *Camera;
