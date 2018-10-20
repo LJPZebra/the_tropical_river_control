@@ -135,6 +135,7 @@ private:
     // Run
     int saveRate;
     QTimer *timerGrab;
+    bool saveFrame;
     int nRun;
     qint64 nFrame;
     QString RunPath;

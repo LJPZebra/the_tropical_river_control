@@ -88,16 +88,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->Snapshot, SIGNAL(clicked()), this, SLOT(snapshot()));
     connect(ui->SpawningDate, SIGNAL(dateChanged(QDate)), this, SLOT(updateAge(QDate)));
 
-    //connect(Camera, SIGNAL(checkFrameRate(float)), ui->trueFPS, SLOT(setText(QString::number(float))));
 
 
     // === Timers ==========================================================
 
-    /*
     // --- Protocol timer
     timerProtocol = new QTimer(this);
     connect(timerProtocol, SIGNAL(timeout()), this, SLOT(displayingProtocolTime()));
-    */
 
     // === Startup =========================================================
 
@@ -172,7 +169,7 @@ void MainWindow::updatePath() {
 void MainWindow::autoset() {
 
     // Create data folder?
-    if (!QDir(ui->DataPath->text()).exists()) { QDir().mkdir(ui->DataPath->text()); }
+    if (!QDir(ui->DataPath->text()).exists()) { QDir().mkpath(ui->DataPath->text()); }
 
     // Find last run
     nRun = 0;
@@ -363,8 +360,7 @@ void MainWindow::snapshot() {
 
     // Create snapshot directory?
     QString SnapPath(ui->DataPath->text() + "Snapshots" + filesep);
-    if (!QDir(ui->DataPath->text()).exists()) { QDir().mkdir(ui->DataPath->text()); }
-    if (!QDir(SnapPath).exists()) { QDir().mkdir(SnapPath); }
+    if (!QDir(SnapPath).exists()) { QDir().mkpath(SnapPath); }
 
     // Get last image number
     int nSnap = 0;
@@ -456,7 +452,6 @@ void MainWindow::displayingProtocolTime() {
 
 void MainWindow::parsingProtocolInstructions() {
 // Asynchronous loop for processing protocol commands
-
     if (!protocolInstructions.count()) { // End of the protocol
         ui->ProtocolRun->setChecked(false);
         return;
@@ -472,7 +467,6 @@ void MainWindow::parsingProtocolInstructions() {
      
     else if (list.at(0)=="data") { // Parse data instructions
         if (list.at(1)=="create directory") {
-
             // Reset run number
             nRun++;
 
@@ -495,14 +489,14 @@ void MainWindow::parsingProtocolInstructions() {
         }
     }
 
-    else if (list.at(0)=="camera") { // Parse camera instrucions
+    else if (list.at(0)=="camera") { // Parse camera instructions
         if (list.at(1)=="start") {
             nFrame = 0;
-            timerGrab->start(1000/saveRate);
+            saveFrame = true;
         }
 
         else if (list.at(1)=="stop") {
-            timerGrab->stop();
+            saveFrame = false;
         }
         else if (list.at(1)=="comment") {
             comment = list.at(2);
