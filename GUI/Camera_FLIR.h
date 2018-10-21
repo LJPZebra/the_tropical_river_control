@@ -176,7 +176,7 @@ signals:
     /**
       *@brief Send a QPixmap image to be displayed
     */
-    void newImageForDisplay(QPixmap);
+    void newImageForDisplay(Image_FLIR);
     void refreshParameters(int, int);
 private:
 

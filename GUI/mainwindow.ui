@@ -272,7 +272,7 @@
         <x>490</x>
         <y>52</y>
         <width>241</width>
-        <height>179</height>
+        <height>188</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -394,21 +394,30 @@
        <item row="5" column="0">
         <widget class="QLabel" name="label_17">
          <property name="text">
-          <string>Framerate</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QLabel" name="trueFPS">
-         <property name="text">
-          <string>value</string>
+          <string>Buffer</string>
          </property>
         </widget>
        </item>
        <item row="5" column="2">
         <widget class="QLabel" name="label_18">
          <property name="text">
-          <string>fps</string>
+          <string>frames</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QSpinBox" name="bufferSize">
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>300</number>
+         </property>
+         <property name="value">
+          <number>1</number>
          </property>
         </widget>
        </item>

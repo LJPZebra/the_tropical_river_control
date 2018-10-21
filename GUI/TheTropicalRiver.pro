@@ -21,11 +21,13 @@ SOURCES += main.cpp\
     mainwindow.cpp \
     MsgHandler.cpp \
     Camera_FLIR.cpp \
+    Frame_Writer.cpp \
     qcustomplot.cpp
 
 HEADERS  += mainwindow.h \
     MsgHandler.h \
     Camera_FLIR.h \
+    Frame_Writer.h \
     qcustomplot.h
 
 FORMS    += mainwindow.ui

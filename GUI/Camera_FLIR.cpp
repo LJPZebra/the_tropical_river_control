@@ -340,15 +340,15 @@ void Camera_FLIR::newImage(Image_FLIR FImg) {
     if (tRefSave==-1) { tRefSave = FImg.timestamp; }
 
     // --- Get image
-    QPixmap Pixmap = QPixmap::fromImage(FImg.Img);
+    //QPixmap Pixmap = QPixmap::fromImage(FImg.Img);
 
     // --- Save image ? -------------------------------------------------
 
     // --- Display image ? ----------------------------------------------
 
-    if (FImg.timestamp-tRefDisp >= 1e9/DisplayRate) {
-        emit newImageForDisplay(Pixmap);
-    }
+    //if (FImg.timestamp-tRefDisp >= 1e9/DisplayRate) {
+        emit newImageForDisplay(FImg);
+    //}
 
 }
 

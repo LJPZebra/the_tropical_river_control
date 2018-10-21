@@ -23,6 +23,7 @@
 #include "qcustomplot.h"
 #include "MsgHandler.h"
 #include "Camera_FLIR.h"
+#include "Frame_Writer.h"
 
 // === Mainwindow class ====================================================
 
@@ -43,9 +44,11 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-
+signals:
+    void startSavingFrame();
+    void sendFrame(Image_FLIR);
 public slots:
-
+    void savingFrame(Image_FLIR);
     // Messages
     void UpdateMessage();
 
@@ -103,7 +106,7 @@ public slots:
       *@brief stop the running Camera and start a new Camera with the new input Parameters
     */
     void updateCamera();
-    void updateDisplay(QPixmap);
+    void updateDisplay(Image_FLIR);
 
     // Images
     void snapshot();
@@ -131,6 +134,10 @@ private:
 
     // Camera
     Camera_FLIR *Camera;
+
+    //Frame writer
+    Frame_Writer_Wrapper *Writer;
+    QThread *ImageWriterThread;
 
     // Run
     int saveRate;

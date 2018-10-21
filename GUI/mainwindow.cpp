@@ -20,11 +20,6 @@ MainWindow::MainWindow(QWidget *parent) :
     nFrame = 0;
     ImgComment = QString();
 
-    // Image writer
-    ImgWriter = new QImageWriter;
-    ImgWriter->setFormat("png");
-    ImgWriter->setText("Author", SetupName);
-
     // === USER INTERFACE ==================================================
 
     // --- Main window
@@ -88,7 +83,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->Snapshot, SIGNAL(clicked()), this, SLOT(snapshot()));
     connect(ui->SpawningDate, SIGNAL(dateChanged(QDate)), this, SLOT(updateAge(QDate)));
 
+    Writer = new Frame_Writer_Wrapper();
 
+    connect(Camera, SIGNAL(newImageForDisplay(Image_FLIR)), Writer, SLOT(addFrame(Image_FLIR)));
 
     // === Timers ==========================================================
 
@@ -165,6 +162,18 @@ void MainWindow::updatePath() {
     autoset();
 
 }
+
+
+void MainWindow::savingFrame(Image_FLIR frame) {
+  if(saveFrame){
+    //ui->statusBar->showMessage(QString("Run %1 - Frame %3").arg(nRun, 2, 10, QLatin1Char('0')).arg(Writer->nFrame, 6, 10, QLatin1Char('0')));
+    //Writer->mtx.lock();
+    //Writer->buffer.push(frame);
+    //Writer->mtx.unlock();
+    cout << "lol" << endl;
+  }
+}
+
 
 void MainWindow::autoset() {
 
@@ -301,7 +310,7 @@ void MainWindow::initCamera() {
     Camera = new Camera_FLIR(0);
 
     connect(ui->UpdateCamera, SIGNAL(released()), this, SLOT(updateCamera()));
-    connect(Camera, SIGNAL(newImageForDisplay(QPixmap)), this, SLOT(updateDisplay(QPixmap)));
+    connect(Camera, SIGNAL(newImageForDisplay(Image_FLIR)), this, SLOT(updateDisplay(Image_FLIR)));
 
     this->armCamera();
 
@@ -325,7 +334,10 @@ void MainWindow::updateCamera() {
     this->armCamera();
 }
 
-void MainWindow::updateDisplay(QPixmap pix) { ui->Image->setPixmap(pix); }
+void MainWindow::updateDisplay(Image_FLIR FImg) {
+  QPixmap pix = QPixmap::fromImage(FImg.Img);
+  ui->Image->setPixmap(pix);
+}
 
 void MainWindow::GrabLoop() {
 
@@ -348,10 +360,10 @@ void MainWindow::GrabLoop() {
     // --- Update
 
     // Status bar
-    ui->statusBar->showMessage(QString("Run %1 - Frame %3").arg(nRun, 2, 10, QLatin1Char('0')).arg(nFrame, 6, 10, QLatin1Char('0')));
+//    ui->statusBar->showMessage(QString("Run %1 - Frame %3").arg(nRun, 2, 10, QLatin1Char('0')).arg(Writer->nFrame, 6, 10, QLatin1Char('0')));
 
     // Frame number
-    nFrame++;
+  //  nFrame++;
 
 }
 
@@ -472,7 +484,7 @@ void MainWindow::parsingProtocolInstructions() {
 
             // Create run directory
             if (!QDir(ui->DataPath->text()).exists()) { QDir().mkdir(ui->DataPath->text()); }
-            RunPath = QString(ui->DataPath->text() + "Run %1" + filesep).arg(nRun, 2, 10, QLatin1Char('0'));
+            RunPath = QString(ui->DataPath->text() + "Run %1").arg(nRun, 2, 10, QLatin1Char('0'));
             if (!QDir(RunPath).exists()) { QDir().mkdir(RunPath); }
 
             // Save protocol file
@@ -491,12 +503,25 @@ void MainWindow::parsingProtocolInstructions() {
 
     else if (list.at(0)=="camera") { // Parse camera instructions
         if (list.at(1)=="start") {
-            nFrame = 0;
-            saveFrame = true;
+
+    // Image writer
+/*    Writer = new Frame_Writer(RunPath, filesep);
+    ImageWriterThread = new QThread;
+    Writer->moveToThread(ImageWriterThread);
+    connect(ImageWriterThread, SIGNAL(started()), Writer, SLOT(displayInfo()));
+    connect(Writer, SIGNAL(bufferSize(int)), ui->bufferSize, SLOT(setValue(int)));
+    connect(ImageWriterThread, SIGNAL(started()), Writer, SLOT(processBuffer()));
+    connect(Writer, SIGNAL(finished()), ImageWriterThread, SLOT(quit()));
+    connect(Writer, SIGNAL(finished()), Writer, SLOT(deleteLater()));
+    connect(ImageWriterThread, SIGNAL(finished()), ImageWriterThread, SLOT(deleteLater()));
+    ImageWriterThread->start();*/
+    //Writer->processStatus = true;
+          //saveFrame = true;
+        Writer->startSaving(QString(RunPath + filesep));
         }
 
         else if (list.at(1)=="stop") {
-            saveFrame = false;
+          Writer->stopSaving();
         }
         else if (list.at(1)=="comment") {
             comment = list.at(2);
