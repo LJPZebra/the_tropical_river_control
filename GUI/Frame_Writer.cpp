@@ -1,39 +1,65 @@
 #include "Frame_Writer.h"
 
-Frame_Writer::Frame_Writer(QString RunPat){
+/* =================================================================== *\
+|                       Frame_Writer Class                             |
+| This class implementes a QImageWriter object to write images on the  |
+| disk and a buffer allowing a constant speed acquision of image.      |
+| The Frame_Writer object need to be run in is own thread. Image saving|
+| is thread safe but adding image in the buffer have to be done in a   |
+| thread safe manner (see below Frame_Writer_Wrapper that manage thread|
+| buffering and writing. 
+\* =================================================================== */
 
-  nFrame = 0;
-  RunPath = RunPat;
+Frame_Writer::Frame_Writer(QString runPath){
+  m_runPath = runPath;
+  m_nFrame = 0;
+  m_bufferSize = 0;
   ImageWriter = new QImageWriter;
   ImageWriter->setFormat("pgm");
 }
 
 
 void Frame_Writer::processBuffer(){
-  // CAN BE REIMPLEMENTED TO MINIMIZED MUTEX LOCK TIME
-  while(processStatus|buffer.size() > 0){
-    mtx.lock();
-    if(buffer.size() != 0){
-      Image_FLIR frame = buffer.front();
-      buffer.pop();
-      QPixmap pix = QPixmap::fromImage(frame.Img);
-      int timestamp = frame.timestamp;
-      ImageWriter->setFileName(QString(RunPath + "Frame_%1.pgm").arg(nFrame, 6, 10, QLatin1Char('0')));
+  
+  Image_FLIR frame;
+  QPixmap pix;
+  bool isFrameToSave = false; // Necessary to minimize the buffer lock time
+  int timestamp;
+
+  while(m_isProcess || m_bufferSize > 0){ // Process the buffer when the Frame_Writer is started until it is stopped and the buffer is empty
+
+    // Thread safe access to the buffer to take a frame
+    m_mutex.lock();
+    if(m_buffer.size() > 0){
+      frame = m_buffer.front();
+      m_buffer.pop();
+      m_bufferSize = m_buffer.size();
+      isFrameToSave = true;
+}
+    m_mutex.unlock();
+
+    if(isFrameToSave){
+
+      // Write frame to disk
+      pix = QPixmap::fromImage(frame.Img);
+      ImageWriter->setFileName(QString(m_runPath + "Frame_%1.pgm").arg(m_nFrame, 6, 10, QLatin1Char('0')));
       ImageWriter->write(pix.toImage());
-    emit bufferSize(buffer.size());
-    emit savedFrames(nFrame);
-    // Append metadata
+
+      // Append metadata
+      timestamp = frame.timestamp;
       QFile ImgFile(ImageWriter->fileName());
       if (ImgFile.open(QIODevice::WriteOnly | QIODevice::Append)) {
           QTextStream tmp(&ImgFile);
-    //      tmp << endl << "#" + SetupName + " " + Version;
           tmp << endl << "#" + QString("Timestamp:%1;TempLeft:%2;TempRight:%3").arg(timestamp);
       }
+
+      emit bufferSize(m_bufferSize);
+      emit savedFrames(m_nFrame);
+      m_nFrame++;
+      isFrameToSave = false;
     }
-    mtx.unlock();
-    nFrame++;
   }
-  emit finished();
+  emit finished(); // Destroy the Frame_Writer object after the saving is completed
 }
 
 void Frame_Writer::displayInfo(){
@@ -43,16 +69,27 @@ void Frame_Writer::displayInfo(){
 
 
 Frame_Writer_Wrapper::Frame_Writer_Wrapper(){
-  saveStatus = false;
+  isSaving = false;
 }
 
 
+
+
+
+/* =================================================================== *\
+|                     Frame_Writer_Wrapper Class                       |
+| This class implementes a wrapper to the Frame_Writer object.It allows|
+| to create and manage easily the creation and destruction of a        |
+| Frame_Writer object and the thread safety. 
+\* =================================================================== */
+
 void Frame_Writer_Wrapper::newWriter(QString runPath){
 
+    // Frame_Writer object have to live in is own thread
     Writer = new Frame_Writer(runPath);
-
     ImageWriterThread = new QThread;
     Writer->moveToThread(ImageWriterThread);
+
     connect(ImageWriterThread, SIGNAL(started()), Writer, SLOT(displayInfo()));
     connect(ImageWriterThread, SIGNAL(started()), Writer, SLOT(processBuffer()));
     connect(Writer, SIGNAL(bufferSize(int)), this, SIGNAL(bufferSize(int)));
@@ -63,21 +100,21 @@ void Frame_Writer_Wrapper::newWriter(QString runPath){
 }
 
 void Frame_Writer_Wrapper::addFrame(Image_FLIR frame){
-    if(saveStatus){
-        Writer->mtx.lock();
-        Writer->buffer.push(frame);
-        Writer->mtx.unlock();
+    if(isSaving){ // Thread safe access to put frame in the Frame_Writer buffer
+        Writer->m_mutex.lock();
+        Writer->m_buffer.push(frame);
+        Writer->m_mutex.unlock();
       }
 }
 
 void Frame_Writer_Wrapper::startSaving(QString path){
     newWriter(path);
-    Writer->processStatus = true;
-    saveStatus = true;
+    Writer->m_isProcess = true;
+    isSaving = true;
     ImageWriterThread->start();
 }
 
 void Frame_Writer_Wrapper::stopSaving(){
-    saveStatus = false;
-    Writer->processStatus = false;
+    isSaving = false;
+    Writer->m_isProcess = false;
 }

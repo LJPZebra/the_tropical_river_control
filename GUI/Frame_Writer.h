@@ -13,18 +13,20 @@
 using namespace std;
 
 /* =================================================================== *\
-|    Frame_Writer Class                                                |
+|                       Frame_Writer Class                             |
+| This class implementes a QImageWriter object to write images on the  |
+| disk and a buffer allowing a constant speed acquision of image.      |
+| The Frame_Writer object need to be run in is own thread. Image saving|
+| is thread safe but adding image in the buffer have to be done in a   |
+| thread safe manner (see below Frame_Writer_Wrapper that manage thread|
+| buffering and writing. 
 \* =================================================================== */
 /**
  * \class Frame_Writer
  *
- * \brief This class implementes a QImageWriter with a buffer. This allow to save all frames independant of disk speed of writing.
- *
- *
  * \note This class need to be run in a separate thread.
  *
  * \author Benjamin Gallois
- *
  *
  * \date Date: 2018/10/21 
  *
@@ -41,14 +43,15 @@ public:
   */
   Frame_Writer(QString);
 
-  int nFrame;
-  bool processStatus;
-  mutex mtx;
-  queue<Image_FLIR> buffer;
+  bool m_isProcess;
+  int m_bufferSize;
+  mutex m_mutex;
+  queue<Image_FLIR> m_buffer;
 
 private:
-  QString RunPath;
+  QString m_runPath;
   QImageWriter *ImageWriter;
+  int m_nFrame;
 
 signals:
   /**
@@ -82,7 +85,10 @@ public slots:
 
 
 /* =================================================================== *\
-|    Frame_Writer_Wrapper Class                                                |
+|                     Frame_Writer_Wrapper Class                       |
+| This class implementes a wrapper to the Frame_Writer object.It allows|
+| to create and manage easily the creation and destruction of a        |
+| Frame_Writer object and the thread safety. 
 \* =================================================================== */
 /**
  * \class Frame_Writer
@@ -103,12 +109,11 @@ class Frame_Writer_Wrapper : public QObject {
 
 public:
   Frame_Writer_Wrapper();
-  bool saveStatus;
+  bool isSaving;
 
 private:
   Frame_Writer *Writer;
   QThread *ImageWriterThread;
-
 
 public slots:
   /**
