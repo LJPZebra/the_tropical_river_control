@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QMainWindow>
 #include <QDir>
+#include <QRegExp>
 #include <QShortcut>
 #include <QScrollBar>
 #include <QVector>
@@ -18,12 +19,12 @@
 #include <QThread>
 #include <QImageWriter>
 #include <QFileDialog>
-#include <QVector>
 
 #include "qcustomplot.h"
 #include "MsgHandler.h"
 #include "Camera_FLIR.h"
 #include "Frame_Writer.h"
+#include "Serial_Master.h"
 
 // === Mainwindow class ====================================================
 
@@ -47,16 +48,18 @@ public:
 signals:
     void startSavingFrame();
     void sendFrame(Image_FLIR);
+    void serialTerminalOutput(QString);
 public slots:
     void savingFrame(Image_FLIR);
     // Messages
     void UpdateMessage();
-
+    void receivedSerialTerminalDialogue(QString, QString);
     // Project directories
     void BrowseProject();
     void autoset();
-
-
+    void sendSerialTerminalDialogue(); 
+    void setTest(QString, QString);
+    void getTest();
     /**
       *@brief parse the signal emit by the Camera to update the GUI
     */
@@ -89,8 +92,8 @@ public slots:
     void updateAge(QDate);
 
     // Serial communication
-    void checkSerial();
-    void readSerial();
+    //void checkSerial();
+    //void readSerial();
 
     /**
       *@brief create a new object camera with the input parameters
@@ -115,6 +118,8 @@ public slots:
 
 private:
 
+    QElapsedTimer *counter;
+    qint64 tmp;
     // --- Properties ---------------------------
 
     // Files and folders
@@ -128,9 +133,6 @@ private:
     QVector<double> Time, TempLeft, TempRight, TargetLeft, TargetRight;
     double TargetLeftValue, TargetRightValue;
 
-    // Serial communication
-    QSerialPort *Serial;
-    bool skipSerial;
 
     // Camera
     Camera_FLIR *Camera;
@@ -158,9 +160,8 @@ private:
     // --- Methods ------------------------------
 
     // Serial communication
-    void send(QString);
-    const char* str(QString);
-
+    Serial_Master *serial;
+    QString idSerialWaitingAnswer;            // In the terminal block the answer of all serial that are not asked 
     // Directories
     void updatePath();
 

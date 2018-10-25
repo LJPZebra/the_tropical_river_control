@@ -73,7 +73,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // === Connections =====================================================
 
     connect(Camera, SIGNAL(refreshParameters(int, int)), this, SLOT(parsingRefreshedParameters(int, int)));
-    connect(ui->CheckSerial, SIGNAL(released()), this, SLOT(checkSerial()));
+    //connect(ui->CheckSerial, SIGNAL(released()), this, SLOT(checkSerial()));
 
     connect(ui->ProjectPathButton, SIGNAL(clicked()), this, SLOT(BrowseProject()));
     connect(ui->Autoset, SIGNAL(clicked()), this, SLOT(autoset()));
@@ -95,15 +95,60 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // === Startup =========================================================
 
-    //skipSerial = true;
-    QTimer::singleShot(400, this, SLOT(checkSerial()));
 
+/*****************************************************************
+                      SERIAL
+*****************************************************************/
+    serial = new Serial_Master;
+    connect(ui->CheckSerial, SIGNAL(clicked()), serial, SLOT(checkSerialConnection()));
+    connect(ui->serialTerminalInput, SIGNAL(returnPressed()), this, SLOT(sendSerialTerminalDialogue()));
+    connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(receivedSerialTerminalDialogue(QString, QString)));
+    connect(this, SIGNAL(serialTerminalOutput(QString)), ui->serialTerminalOutput, SLOT(appendHtml(QString)));
 }
+
+/*****************************************************************
+                      SERIAL
+*****************************************************************/
+
+void MainWindow::sendSerialTerminalDialogue() {
+
+  QString commandInput = ui->serialTerminalInput->text();
+  emit(serialTerminalOutput("<b>You</b> say: <b>@</b><i>" + commandInput +"</i>"));
+  ui->serialTerminalInput->clear();
+ 
+  // Parse input commands from the serialTerminal console. 
+  if(commandInput == "ls serial") { // Special command
+    QVector<QString> commandOutputList = serial->listSerials();
+    for(auto i: commandOutputList) {
+      emit(serialTerminalOutput(i));
+    }
+  }
+  else { // Direct access to the serial of the Arduino
+    QStringList parsedCommand = commandInput.split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
+    if(parsedCommand.length() == 2){
+      serial->sendSerialCommand(parsedCommand.at(0), parsedCommand.at(1));
+      idSerialWaitingAnswer = parsedCommand.at(0);
+    }
+    else {
+      emit(serialTerminalOutput("<b>The Tropical River</b> says: <i>not a valid command</i>"));
+    }
+  }
+}
+
+
+void MainWindow::receivedSerialTerminalDialogue(QString serialId, QString message) {
+  // Display in the console only the answer of the serial asked in sendSerialTerminalDialogue method
+  if (serialId == idSerialWaitingAnswer){
+    emit(serialTerminalOutput("Serial <b>" + serialId + "</b> says: <i>" + message + "</i>"));
+    idSerialWaitingAnswer.clear();
+  }
+}
+
+
 
 /* ====================================================================== *\
 |    MESSAGES                                                              |
 \* ====================================================================== */
-
 void MainWindow::parsingRefreshedParameters(int param1, int param2) {
     ui->Exposure->setValue(param1);
     ui->fps->setValue(param2);
@@ -211,7 +256,7 @@ void MainWindow::updateAge(QDate) {
 |    SERIAL COMMUNICATION                                                  |
 \* ====================================================================== */
 
-void MainWindow::checkSerial() {
+/*void MainWindow::checkSerial() {
 
     qInfo() << TITLE_2 << "Serial connections";
 
@@ -259,15 +304,15 @@ void MainWindow::checkSerial() {
         connect(Serial, SIGNAL(readyRead()), this, SLOT(readSerial()));
 
     }
-}
+}*/
 
-void MainWindow::send(QString cmd) {
+/*void MainWindow::send(QString cmd) {
     Serial->write(cmd.toStdString().c_str());
     Serial->flush();
     QThread::msleep(5);
-}
+}*/
 
-void MainWindow::readSerial() {
+/*void MainWindow::readSerial() {
 
     // --- Read response
     QByteArray readData = Serial->readAll();
@@ -299,7 +344,7 @@ void MainWindow::readSerial() {
 
     }
 
-}
+}*/
 
 /* ====================================================================== *\
 |    CAMERA                                                                |
@@ -370,7 +415,7 @@ void MainWindow::GrabLoop() {
 
 void MainWindow::snapshot() {
 
-    // Create snapshot directory?
+   /* // Create snapshot directory?
     QString SnapPath(ui->DataPath->text() + "Snapshots" + filesep);
     if (!QDir(SnapPath).exists()) { QDir().mkpath(SnapPath); }
 
@@ -391,9 +436,28 @@ void MainWindow::snapshot() {
 
     // Update status message
     ui->statusBar->showMessage(QString("Last image: %1").arg(nSnap, 6, 10, QLatin1Char('0')));
-
+*/
+    timerGrab = new QTimer;
+    timerGrab -> start(40);
+ counter = new QElapsedTimer;
+    counter->start();
+    connect(timerGrab, SIGNAL(timeout()), this, SLOT(getTest()));
+    connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(setTest(QString, QString)));
 }
 
+void MainWindow::getTest() {
+      serial->sendSerialCommand("test", "coucou");
+      serial->sendSerialCommand("3", "getId");
+}
+
+
+void MainWindow::setTest(QString serialId, QString message) {
+  if ((serialId == "test") && (message=="salut")){
+    qint64 a = counter->elapsed();
+    cout << "\r" << tmp-a << endl;
+    tmp = a;
+  }
+}
 
 
 
@@ -471,7 +535,11 @@ void MainWindow::parsingProtocolInstructions() {
 
     bool bcont = true;
 
-    QStringList list = protocolInstructions[0].split(":");
+    QStringList list = protocolInstructions[0].split(QRegExp(":+"));
+  
+    for(auto& a: list){
+      cout << a.toStdString() << endl;
+    }
 
     if (list.at(0)=="print") { // Parse print instructions
         qInfo() << qPrintable(list.at(1));
@@ -504,19 +572,6 @@ void MainWindow::parsingProtocolInstructions() {
     else if (list.at(0)=="camera") { // Parse camera instructions
         if (list.at(1)=="start") {
 
-    // Image writer
-/*    Writer = new Frame_Writer(RunPath, filesep);
-    ImageWriterThread = new QThread;
-    Writer->moveToThread(ImageWriterThread);
-    connect(ImageWriterThread, SIGNAL(started()), Writer, SLOT(displayInfo()));
-    connect(Writer, SIGNAL(bufferSize(int)), ui->bufferSize, SLOT(setValue(int)));
-    connect(ImageWriterThread, SIGNAL(started()), Writer, SLOT(processBuffer()));
-    connect(Writer, SIGNAL(finished()), ImageWriterThread, SLOT(quit()));
-    connect(Writer, SIGNAL(finished()), Writer, SLOT(deleteLater()));
-    connect(ImageWriterThread, SIGNAL(finished()), ImageWriterThread, SLOT(deleteLater()));
-    ImageWriterThread->start();*/
-    //Writer->processStatus = true;
-          //saveFrame = true;
         Writer->startSaving(QString(RunPath + filesep));
         }
 
@@ -534,12 +589,17 @@ void MainWindow::parsingProtocolInstructions() {
         return;
     }
 
-    else if (list.at(0)=="run") { // Parse run instructions
-        // Set direction
-        if (list.at(1)=="up") {  }
-        if (list.at(1)=="down") {  }
-        // Wait for the run end
-        bcont = false;
+    else if (serial->serialList.contains(list.at(0))) { // Parse serial instructions
+      if(list.length() == 3){
+        serial->sendSerialCommand(list.at(0), QString(list.at(1) + ":" + list.at(2))); // Backward compatibility 
+      }
+      else if (list.length() == 2){
+        serial->sendSerialCommand(list.at(0), list.at(1)); // Backward compatibility 
+      }
+      else{
+        qDebug() << "Unknown command:" << protocolInstructions[0];
+      }
+
     }
 
     else {
