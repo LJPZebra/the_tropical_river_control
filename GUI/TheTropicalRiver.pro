@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets serialport printsupport
+QT += widgets serialport printsupport
 
 DESTDIR=build
 OBJECTS_DIR=build
@@ -22,12 +22,14 @@ SOURCES += main.cpp\
     MsgHandler.cpp \
     Camera_FLIR.cpp \
     Frame_Writer.cpp \
+    Serial_Master.cpp \
     qcustomplot.cpp
 
 HEADERS  += mainwindow.h \
     MsgHandler.h \
     Camera_FLIR.h \
     Frame_Writer.h \
+    Serial_Master.h \
     qcustomplot.h
 
 FORMS    += mainwindow.ui

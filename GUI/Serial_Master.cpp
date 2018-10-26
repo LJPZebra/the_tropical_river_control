@@ -23,6 +23,7 @@ void Serial_Master::checkSerialConnection() {
 
       qInfo() << "Opening" << infos[i].portName();
       QSerialPort *serial = new QSerialPort(this);
+      QThread::msleep(5000);
       serial->setPortName(infos[i].portName());
       serial->setBaudRate(115200);
       serial->setDataBits(QSerialPort::Data8);
@@ -33,9 +34,15 @@ void Serial_Master::checkSerialConnection() {
       
       // Find the dd of the serial (see Arduino documentation to define an id)
       if (serial->open(QIODevice::ReadWrite)) {
-        serial->write(QByteArray("getId"));
-        serial->flush(); 
+        // This loop is necessary to connect with the Arduino nano.
+        // The Arduino Nano need some commands before answering.
+        for(int i =0; i < 10; i++){
+          serial->write(QByteArray("getId"));
+          serial->flush(); 
+        QThread::msleep(200);
+        }
       }
+      
       else{
         qInfo() << "Failed to open port" << serial->portName();
       }

@@ -527,7 +527,11 @@ void MainWindow::displayingProtocolTime() {
 }
 
 void MainWindow::parsingProtocolInstructions() {
-// Asynchronous loop for processing protocol commands
+// Asynchronous loop for processing protocol commands.
+// If the Arduino serial follows the standard you don't have to touch anything.
+// In the protocol file just write serialId::command::value
+
+
     if (!protocolInstructions.count()) { // End of the protocol
         ui->ProtocolRun->setChecked(false);
         return;
@@ -537,9 +541,6 @@ void MainWindow::parsingProtocolInstructions() {
 
     QStringList list = protocolInstructions[0].split(QRegExp(":+"));
   
-    for(auto& a: list){
-      cout << a.toStdString() << endl;
-    }
 
     if (list.at(0)=="print") { // Parse print instructions
         qInfo() << qPrintable(list.at(1));
@@ -599,12 +600,6 @@ void MainWindow::parsingProtocolInstructions() {
       else{
         qDebug() << "Unknown command:" << protocolInstructions[0];
       }
-
-    }
-
-    else {
-        qDebug() << "Unknown command:" << protocolInstructions[0];
-        return;
     }
 
     // --- Remove first command
