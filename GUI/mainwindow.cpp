@@ -67,26 +67,30 @@ MainWindow::MainWindow(QWidget *parent) :
 
     qInfo() << TITLE_2 << "Camera";
 
-    // Initialize CameraNN
+    // Initialize Camera
     initCamera();
 
     // === Connections =====================================================
 
     connect(Camera, SIGNAL(refreshParameters(int, int)), this, SLOT(parsingRefreshedParameters(int, int)));
-    //connect(ui->CheckSerial, SIGNAL(released()), this, SLOT(checkSerial()));
 
     connect(ui->ProjectPathButton, SIGNAL(clicked()), this, SLOT(BrowseProject()));
     connect(ui->Autoset, SIGNAL(clicked()), this, SLOT(autoset()));
     connect(ui->ProtocolPathButton, SIGNAL(clicked()), this, SLOT(browseProtocol()));
-    connect(ui->ProtocolRun, SIGNAL(toggled(bool)), this, SLOT(readingProtocolFile(bool)));
+    connect(ui->ProtocolRun, SIGNAL(toggled(bool)), this, SLOT(readingProtocolFile()));
 
     connect(ui->Snapshot, SIGNAL(clicked()), this, SLOT(snapshot()));
     connect(ui->SpawningDate, SIGNAL(dateChanged(QDate)), this, SLOT(updateAge(QDate)));
 
-    Writer = new Frame_Writer_Wrapper();
 
+/*************************************************************************************
+                      FRAME_WRITER
+*************************************************************************************/
+    Writer = new Frame_Writer_Wrapper();
     connect(Camera, SIGNAL(newImageForDisplay(Image_FLIR)), Writer, SLOT(addFrame(Image_FLIR)));
 
+    ImgWriter = new QImageWriter;
+    ImgWriter->setFormat("pgm");
     // === Timers ==========================================================
 
     // --- Protocol timer
@@ -209,17 +213,6 @@ void MainWindow::updatePath() {
 }
 
 
-void MainWindow::savingFrame(Image_FLIR frame) {
-  if(saveFrame){
-    //ui->statusBar->showMessage(QString("Run %1 - Frame %3").arg(nRun, 2, 10, QLatin1Char('0')).arg(Writer->nFrame, 6, 10, QLatin1Char('0')));
-    //Writer->mtx.lock();
-    //Writer->buffer.push(frame);
-    //Writer->mtx.unlock();
-    cout << "lol" << endl;
-  }
-}
-
-
 void MainWindow::autoset() {
 
     // Create data folder?
@@ -252,99 +245,6 @@ void MainWindow::updateAge(QDate) {
 
 }
 
-/* ====================================================================== *\
-|    SERIAL COMMUNICATION                                                  |
-\* ====================================================================== */
-
-/*void MainWindow::checkSerial() {
-
-    qInfo() << TITLE_2 << "Serial connections";
-
-    // --- Get available ports
-
-    const QList<QSerialPortInfo> infos = QSerialPortInfo::availablePorts();
-    qInfo() << infos.length() << "connections detected";
-
-    // --- Assign port
-
-    for (int i=0; i<infos.length(); i++) {
-
-        // --- Checks
-
-        // Skip non-Arduino connections
-        if (infos[i].description().left(7)!="Arduino") { continue; }
-
-        // Is device busy ?
-        if (infos[i].isBusy()) {
-            qInfo().nospace() << "[" << infos[i].portName() << "] is busy ...";
-            continue;
-        }
-
-        // --- Open connection
-
-        qInfo() << "Opening" << infos[i].portName();
-
-        Serial = new QSerialPort(this);
-
-        Serial->setPortName(infos[i].portName());
-        Serial->setBaudRate(115200);
-        Serial->setDataBits(QSerialPort::Data8);
-        Serial->setParity(QSerialPort::NoParity);
-        Serial->setStopBits(QSerialPort::OneStop);
-        Serial->setFlowControl(QSerialPort::NoFlowControl);
-
-        if (!Serial->open(QIODevice::ReadWrite)) {
-            qWarning() << "Failed to open port" << Serial->portName();
-            return;
-        }
-
-        qInfo() << "Init. serial connection";
-
-        // Connect serial read output
-        connect(Serial, SIGNAL(readyRead()), this, SLOT(readSerial()));
-
-    }
-}*/
-
-/*void MainWindow::send(QString cmd) {
-    Serial->write(cmd.toStdString().c_str());
-    Serial->flush();
-    QThread::msleep(5);
-}*/
-
-/*void MainWindow::readSerial() {
-
-    // --- Read response
-    QByteArray readData = Serial->readAll();
-    while (Serial->waitForReadyRead(10)) {
-        readData.append(Serial->readAll());
-    }
-
-    if (skipSerial) {
-        skipSerial = false;
-        return;
-    }
-
-    QStringList res = QString(readData).split("\r\n", QString::SkipEmptyParts);
-
-    // --- Filter responses
-    for (int i=0; i<res.size(); i++) {
-
-        if (res[i].left(4)=="Data") {
-
-            QStringList Data = res[i].mid(5).split(" ", QString::SkipEmptyParts);
-            //setTemperatures(Data);
-
-        } else {
-
-            // --- Display
-            qDebug() << res[i].toStdString().c_str();
-
-        }
-
-    }
-
-}*/
 
 /* ====================================================================== *\
 |    CAMERA                                                                |
@@ -384,38 +284,11 @@ void MainWindow::updateDisplay(Image_FLIR FImg) {
   ui->Image->setPixmap(pix);
 }
 
-void MainWindow::GrabLoop() {
-
-    /*
-
-    // --- Save image
-
-    // Set EXIF metadata
-    if (comment.length()) {
-        ImgWriter->setText("Description", QString("Timestamp %1, %2").arg(TimeStamp).arg(comment));
-        comment = QString();
-    } else {
-        ImgWriter->setText("Description", QString("Timestamp %1").arg(TimeStamp));
-    }
-
-    // Save Image
-    ImgWriter->setFileName(QString(RunPath + filesep + "Frame_%1.png").arg(nFrame, 6, 10, QLatin1Char('0')));
-    ImgWriter->write(pixmap.toImage());
-*/
-    // --- Update
-
-    // Status bar
-//    ui->statusBar->showMessage(QString("Run %1 - Frame %3").arg(nRun, 2, 10, QLatin1Char('0')).arg(Writer->nFrame, 6, 10, QLatin1Char('0')));
-
-    // Frame number
-  //  nFrame++;
-
-}
 
 
 void MainWindow::snapshot() {
 
-   /* // Create snapshot directory?
+    // Create snapshot directory?
     QString SnapPath(ui->DataPath->text() + "Snapshots" + filesep);
     if (!QDir(SnapPath).exists()) { QDir().mkpath(SnapPath); }
 
@@ -431,35 +304,14 @@ void MainWindow::snapshot() {
     nSnap++;
 
     // Save snapshot
-    ImgWriter->setFileName(QString(SnapPath + "Image_%1.png").arg(nSnap, 6, 10, QLatin1Char('0')));
-    // ImgWriter->write(pixmap.toImage());
+    const QPixmap* pix = ui->Image->pixmap();
+    ImgWriter->setFileName(QString(SnapPath + "Image_%1.pgm").arg(nSnap, 6, 10, QLatin1Char('0')));
+    ImgWriter->write(pix->toImage());
 
     // Update status message
     ui->statusBar->showMessage(QString("Last image: %1").arg(nSnap, 6, 10, QLatin1Char('0')));
-*/
-    timerGrab = new QTimer;
-    timerGrab -> start(40);
- counter = new QElapsedTimer;
-    counter->start();
-    connect(timerGrab, SIGNAL(timeout()), this, SLOT(getTest()));
-    connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(setTest(QString, QString)));
+
 }
-
-void MainWindow::getTest() {
-      serial->sendSerialCommand("test", "coucou");
-      serial->sendSerialCommand("3", "getId");
-}
-
-
-void MainWindow::setTest(QString serialId, QString message) {
-  if ((serialId == "test") && (message=="salut")){
-    qint64 a = counter->elapsed();
-    cout << "\r" << tmp-a << endl;
-    tmp = a;
-  }
-}
-
-
 
 
 /* ====================================================================== *\
@@ -473,7 +325,7 @@ void MainWindow::browseProtocol() {
 
 }
 
-void MainWindow::readingProtocolFile(bool b) {
+void MainWindow::readingProtocolFile() {
 
     if (ui->ProtocolRun->isChecked()) { // If button pressed one time to trigger the protocol start
 

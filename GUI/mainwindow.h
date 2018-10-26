@@ -50,7 +50,6 @@ signals:
     void sendFrame(Image_FLIR);
     void serialTerminalOutput(QString);
 public slots:
-    void savingFrame(Image_FLIR);
     // Messages
     void UpdateMessage();
     void receivedSerialTerminalDialogue(QString, QString);
@@ -58,8 +57,6 @@ public slots:
     void BrowseProject();
     void autoset();
     void sendSerialTerminalDialogue(); 
-    void setTest(QString, QString);
-    void getTest();
     /**
       *@brief parse the signal emit by the Camera to update the GUI
     */
@@ -73,7 +70,7 @@ public slots:
     /**
       *@brief read protocol file and start the protocol
     */
-    void readingProtocolFile(bool);
+    void readingProtocolFile();
 
     /**
       *@brief parse and execute protocol instructions
@@ -113,7 +110,6 @@ public slots:
 
     // Images
     void snapshot();
-    void GrabLoop();
 
 
 private:
