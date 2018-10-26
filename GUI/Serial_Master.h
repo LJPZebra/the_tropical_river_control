@@ -14,7 +14,7 @@ using namespace std;
 
 /**
   *  structure to represent the image and all its informations
-  */
+*/
 struct SerialStruct {
     /*@{*/
      QString serialId;        /**< serial Id (see documentation on Arduino protocol standard) */
@@ -24,31 +24,18 @@ struct SerialStruct {
 };
 
 
-
-/****************************************************************************
-                       Serial_master Class                             
-
-This class implementes a mean to communicate with several serials following
- a certain standard. The serial has to be an Arduino and possesses at
-least a function getId. If it possesses in addition a function listCommands
-it can be automaticcaly used with the protocol system see documentation.
-
-When an object Serial_Master is created, all the serial connections are scanned
-and all Arduino serials are requested an id. Then the serial can be used providing
-the id, a list of all the serial id are available with the listSerials() method.
-
-All commands are send by the sendSerialCommand(serialId, command).
-All message are received by the function readSerialMessage() and a 
-signal newMessage(serialId, message) is emitted when new message is received.
-A copy of the last message can be accessed in the Serial_Master structure.
-In case of several serials connected, the message has to be sorted manually
-outside the class by id.
-
-****************************************************************************/
 /**
  * \class Serial_Master
  *
- * \Dev note:
+ * \detailed This class implementes a mean to communicate with several Arduino by serial port.
+             The Arduino has to follow a certain standard (see Arduino standard documentation).
+             When an object Serial_Master is created, all the serial connections are scanned
+             and Arduino device are attributed an id.Then the serial can be used providing
+             the id. A list of all the devices are available by the listSerials() method.
+             All commands are send by the sendSerialCommand(serialId, command) method.
+             All messages from all device are received by the readSerialMessage() method and a 
+             signal newMessage(serialId, message) is emitted when a new message is received.
+             A copy of the last message can be accessed in the Serial_Master structure.
  *
  * \author Benjamin Gallois
  *
@@ -60,16 +47,16 @@ class Serial_Master : public QObject {
   Q_OBJECT
 
 public:
-
   /**
-    *\brief Constructor that check all serial connections and request an id if it is
-            an Arduino device. 
+    *\brief Constructs the Serial_Master object by scanning the serial port connections.
+            If the device is an Arduino not busy, it request its id and map id->QSerialObject
+            and port->id.
   */
   Serial_Master();
 
   /**
-    *\brief Get all id of all connected serials. 
-    *\return QVector(QString) a list of all id.
+    *\brief Gets all id of all connected serials. 
+    *\returns - QVector(QString) - A list of the id of connected Arduino devices.
   */
   QVector<QString> listSerials();
   
@@ -81,20 +68,21 @@ private:
   QMap<QString, QString> portNameToId;          // QMap to access the serial Id by the port name
 
 public slots:
-
   /**
-    *\brief Provide a method to recheck the serial connection after the class initialization. 
+    *\brief Provides a method to re-check the serial connections after the class initialization. 
   */
   void checkSerialConnection();
 
   /**
-    *\brief Wait for an answer for all connected serials and when a new message is received
-            emit a signal with the message and the id of the sender serial.
+    *\brief Waits for an answer for all connected devices, and, when a new message is received
+            emit a signal with the message and the id of the sender.
   */
   void readSerialMessage();
 
   /**
-    *\brief Send a command to the id serial.
+    *\brief Sends a command to the id serial.
+    *\param - QString - serialId is the id of the device.
+    *\param - QString - command is the command to send.
   */
   void sendSerialCommand(QString serialId, QString command);
 
@@ -102,8 +90,8 @@ public slots:
     *\brief After connection to the serial asks for id and assign
             * id => serial struct with all the information of the serial and the pointer to the             serial connection.
             * port name ==> id necessary to sort received message.
-    *\param[in] serialId - id of the serial to send the message.
-    *\param[in] command - command to send to the serial.
+    *\param - QString - serialId is the id of the device.
+    *\param - QString - command is the command to send.
   */
   void getSerialId();
 
@@ -111,9 +99,9 @@ public slots:
 
 signals:
   /**
-    *\brief Signael emitted when a new message from serialId is received.
-    *\param[in] serialId - id of the serial to send the message.
-    *\param[in] message - message received by the serial.
+    *\brief This signal is triggered when a new message is received.
+    *\param - QString - serialId is the id of the device that has sent the message.
+    *\param - QString - message is the message received.
   */
   void newMessage(QString serialId, QString message);
 

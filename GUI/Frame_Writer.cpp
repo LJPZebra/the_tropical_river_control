@@ -7,7 +7,7 @@
 | The Frame_Writer object need to be run in is own thread. Image saving|
 | is thread safe but adding image in the buffer have to be done in a   |
 | thread safe manner (see below Frame_Writer_Wrapper that manage thread|
-| buffering and writing. 
+| buffering and writing. See Frame_Writer.h for full documentation.    |
 \* =================================================================== */
 
 Frame_Writer::Frame_Writer(QString runPath){

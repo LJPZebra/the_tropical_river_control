@@ -12,17 +12,18 @@
 
 using namespace std;
 
-/* =================================================================== *\
-|                       Frame_Writer Class                             |
-| This class implementes a QImageWriter object to write images on the  |
-| disk and a buffer allowing a constant speed acquision of image.      |
-| The Frame_Writer object need to be run in is own thread. Image saving|
-| is thread safe but adding image in the buffer have to be done in a   |
-| thread safe manner (see below Frame_Writer_Wrapper that manage thread|
-| buffering and writing. 
-\* =================================================================== */
 /**
  * \class Frame_Writer
+ *
+ * \brief The class Frame_Writer implementes an image writer with a buffer to save image on
+          the disk.
+ *
+ * \detailed This class implementes a QImageWriter object to write images on the  
+              disk, and a buffer allowing a constant speed acquision of image.      
+              The Frame_Writer object needs to be run in it own thread. Image saving
+              is thread safe but adding image in the buffer have to be done in a   
+              thread safe manner (see below Frame_Writer_Wrapper that manages thread
+              buffering and writing).
  *
  * \note This class need to be run in a separate thread.
  *
@@ -36,12 +37,12 @@ class Frame_Writer : public QObject {
   Q_OBJECT
 
 public:
-
   /**
-    *\brief Constructor with the path to the folder where to write frames. 
+    *\brief Constructs the Frame_Writer object  with the path to the folder where to write frame      s. 
     *\arg QString path to where to write frames
   */
   Frame_Writer(QString);
+
 
   bool m_isProcess;
   int m_bufferSize;
@@ -55,47 +56,47 @@ private:
 
 signals:
   /**
-    *\brief Signal emitted at each adding to the queue that contains the number of frames in the buffer 
+    *\brief This signal is triggered when a frame is added in the buffer and send the size
+            of the buffer.
+    *\arg - int - Number of frames in the buffer.
   */
   void bufferSize(int);
 
   /**
-    *\brief Signal emitted at each adding to the queue.
-    *\arg int Number of frames written.
+    *\brief This signal is triggered when a frame is written in the disk.
+    *\arg - int - Number of frames written on the disk.
   */
   void savedFrames(int);
 
   /**
-    *\brief Signal emitted when the saving of frames are finished to destroy the Frame-Writer object. 
+    *\brief This signal is triggerred when the writing of frames are finished. This triggered
+            the destruction of the Frame_Writer object. 
   */
   void finished();
 
 public slots:
   /**
-    *\brief Start writing images to the disk.
+    *\brief Starts writing images to the disk.
   */
   void processBuffer();
 
   /**
-    *\brief Display in the QDebug the thread Id where the Frame_Writer object live. 
+    *\brief Displays in the QDebug the thread id where the Frame_Writer object lives. 
   */
   void displayInfo();
 };
 
 
 
-/* =================================================================== *\
-|                     Frame_Writer_Wrapper Class                       |
-| This class implementes a wrapper to the Frame_Writer object.It allows|
-| to create and manage easily the creation and destruction of a        |
-| Frame_Writer object and the thread safety. 
-\* =================================================================== */
 /**
- * \class Frame_Writer
+ * \class Frame_Writer_Wrapper
  *
- * \brief This class implementes a wrapper to use Frame_Writer and manage thread safety.
+ * \brief This class implementes a wrapper to use the Frame_Writer object and manages
+          thread safety.
  *
- *
+ * \detailed This class implementes a wrapper for the Frame_Writer object. It allows 
+             to create and manage easily the creation and destruction of a 
+             Frame_Writer object in a thread safe manner.
  *
  * \author Benjamin Gallois
  *
@@ -117,38 +118,39 @@ private:
 
 public slots:
   /**
-    *\brief Add frame thread safe to the buffer of the Writer. 
-    *\arg Image_FLIR structure containing image and its informations
+    *\brief Adds frames to the buffer in a thread safe manner.
+    *\arg - Image_FLIR structure - Image and its informations.
   */
   void addFrame(Image_FLIR);
 
   /**
-    *\brief Start writing frame to the disk
-    *\arg QString Path to where to save frames
+    *\brief Starts writing frame to the disk.
+    *\arg - QString - Path to the folder where to save frames.
   */
   void startSaving(QString);
 
   /**
-    *\brief Stop saving frames and destroy Writer.
+    *\brief Stops writing frames to the disk and destroys the object.
   */
   void stopSaving();
 
   /**
-    *\brief Create a new Frame_Writer object and its connections 
-    *\arg QString Path to where to save frames
+    *\brief Creates a new Frame_Writer object and its connections 
+    *\arg - QString - Path to the folder where to save frames.
   */
   void newWriter(QString);
 
 signals:
   /**
-    *\brief Signal emitted at each adding to the queue.
-    *\arg int Number of frames in the buffer.
+    *\brief This signal is triggered when a frame is added in the buffer and send the size
+            of the buffer.
+    *\arg - int - Number of frames in the buffer.
   */
   void bufferSize(int);
 
   /**
-    *\brief Signal emitted at each adding to the queue.
-    *\arg int Number of frames written.
+    *\brief This signal is triggered when a frame is written in the disk.
+    *\arg - int - Number of frames written on the disk.
   */
   void savedFrames(int);
 };
