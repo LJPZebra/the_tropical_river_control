@@ -25,6 +25,8 @@
 #include "Camera_FLIR.h"
 #include "Frame_Writer.h"
 #include "Serial_Master.h"
+#include "Shenchen_Pump.h"
+#include "Neslab_Rte.h"
 
 // === Mainwindow class ====================================================
 
@@ -53,6 +55,7 @@ public slots:
     // Messages
     void UpdateMessage();
     void receivedSerialTerminalDialogue(QString, QString);
+    void receivedTemperatureUpdate(QString, QString); 
     // Project directories
     void BrowseProject();
     void autoset();
@@ -129,6 +132,9 @@ private:
     QVector<double> Time, TempLeft, TempRight, TargetLeft, TargetRight;
     double TargetLeftValue, TargetRightValue;
 
+    // Temperature sensor
+    QTimer *measureTemperatureTimer;
+    double temperature;
 
     // Camera
     Camera_FLIR *Camera;
@@ -153,13 +159,17 @@ private:
     QTimer *timerProtocol;
     QString comment;
 
+    Shenchen_Pump *pump;
     // --- Methods ------------------------------
 
     // Serial communication
     Serial_Master *serial;
+    Neslab_Rte *heater;
     QString idSerialWaitingAnswer;            // In the terminal block the answer of all serial that are not asked 
+    QTimer *timer = new QTimer(this);
     // Directories
     void updatePath();
+
 
 };
 

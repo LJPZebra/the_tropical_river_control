@@ -18,12 +18,12 @@ void Serial_Master::checkSerialConnection() {
   // Scan all devices connected and ask id serial if it is an Arduino and if it is not already open.
   for (int i = 0; i < infos.length(); i++) {
     // Note to dev: first version was with =="Arduino" but dev computer get "ARDUINO" 
+      qInfo() << "Opening" << infos[i].description();
     // Reimplemented with all lowercase, to be tested on another dev env.
     if ((infos[i].description().left(7).toLower() == "arduino") && !(infos[i].isBusy()) ) {
 
       qInfo() << "Opening" << infos[i].portName();
       QSerialPort *serial = new QSerialPort(this);
-      QThread::msleep(5000);
       serial->setPortName(infos[i].portName());
       serial->setBaudRate(115200);
       serial->setDataBits(QSerialPort::Data8);
@@ -39,7 +39,7 @@ void Serial_Master::checkSerialConnection() {
         for(int i =0; i < 10; i++){
           serial->write(QByteArray("getId"));
           serial->flush(); 
-        QThread::msleep(200);
+          QThread::msleep(200);
         }
       }
       
@@ -106,7 +106,6 @@ void Serial_Master::sendSerialCommand(QString serialId, QString commande) {
   if(serialList.contains(serialId)){
     serialList.value(QString(serialId)).serial->write(commande.toStdString().c_str());
     serialList.value(serialId).serial->flush();
-    QThread::msleep(5);
   }
 }
 

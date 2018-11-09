@@ -108,6 +108,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->serialTerminalInput, SIGNAL(returnPressed()), this, SLOT(sendSerialTerminalDialogue()));
     connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(receivedSerialTerminalDialogue(QString, QString)));
     connect(this, SIGNAL(serialTerminalOutput(QString)), ui->serialTerminalOutput, SLOT(appendHtml(QString)));
+    
+    heater = new Neslab_Rte("/dev/ttyUSB0");
+    heater->start();
+    connect(ui->temperatureHeater, SIGNAL(valueChanged(double)), heater, SLOT(setTemperature(double)));
+    connect(ui->startHeater, SIGNAL(released()), heater, SLOT(start()));
+    connect(ui->stopHeater, SIGNAL(released()), heater, SLOT(stop()));
+    measureTemperatureTimer = new QTimer(this);
+    connect(measureTemperatureTimer, &QTimer::timeout, [this] () {
+      serial->sendSerialCommand("river", "getTemperature");
+    } ); 
+    connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(receivedTemperatureUpdate(QString, QString)));
+    measureTemperatureTimer->start(250);
 }
 
 /*****************************************************************
@@ -128,7 +140,7 @@ void MainWindow::sendSerialTerminalDialogue() {
     }
   }
   else { // Direct access to the serial of the Arduino
-    QStringList parsedCommand = commandInput.split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
+    QStringList parsedCommand = commandInput.split(QRegularExpression("::"), QString::SkipEmptyParts);
     if(parsedCommand.length() == 2){
       serial->sendSerialCommand(parsedCommand.at(0), parsedCommand.at(1));
       idSerialWaitingAnswer = parsedCommand.at(0);
@@ -149,6 +161,12 @@ void MainWindow::receivedSerialTerminalDialogue(QString serialId, QString messag
 }
 
 
+void MainWindow::receivedTemperatureUpdate(QString serialId, QString message) {
+  if (serialId == "river"){
+    temperature = message.toDouble();
+    ui->temperatureMeasured->setText(message);
+  }
+}
 
 /* ====================================================================== *\
 |    MESSAGES                                                              |
@@ -454,6 +472,16 @@ void MainWindow::parsingProtocolInstructions() {
       }
     }
 
+    else if (list.at(0) == "heater") { // Parse serial instructions
+      if(list.length() == 3){
+        if (list.at(1) == "setTemperature") {
+          heater->setTemperature(list.at(2).toDouble());
+        }
+      }
+      else{
+        qDebug() << "Unknown command:" << protocolInstructions[0];
+      }
+    }
     // --- Remove first command
     protocolInstructions.removeFirst();
 
@@ -464,5 +492,6 @@ void MainWindow::parsingProtocolInstructions() {
 
 
 MainWindow::~MainWindow() {
+    delete heater;
     delete ui;
 }

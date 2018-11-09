@@ -7,6 +7,8 @@
 
   To control a customized Aalborg SMV-010007 valve with a touchscreen.
 
+  Téléverser avec le proMini
+
   By Raphaël Candelier (raphael.candelier@upmc.fr)
 
   \* ----------------------------------------------------------------- */
@@ -21,7 +23,7 @@
 
 // === Definitions =================================================
 
-String id = "02";
+String id = "fl1";
 
 int pos = 0;
 float flow;
@@ -89,7 +91,6 @@ void setup() {
 
   Serial.begin(115200);
   Serial.setTimeout(5);
-  Serial.println(F("Flow controller"));
 
   // --- Get parameters from EEPROM
 
@@ -146,54 +147,66 @@ void loop() {
     String input = Serial.readString();
     input.trim();
 
+    // Parsing input: command:value
+    int delimiterIndex = input.indexOf(':');
+    String command;
+    String value;
+    if (delimiterIndex != -1) {
+      command = input.substring(0, delimiterIndex);
+      value = input.substring(delimiterIndex + 1, input.length());
+    }
+
     // --- Get information
-    if (input.equals("id")) { 
-      
-      Serial.println(id);
-
-    // --- Close
+    if (input.equals("getId")) {
+      Serial.println(String(id));
+    }
+    else if (input.equals("listCommands")){
+      Serial.println("stop dispPosition dispFlow setPosition setFlow setA setB");
     } else if (input.equals("stop")) {
-
       resetMotor();
       updateDisplay();
+      Serial.println("stop");
 
     // --- Display position
-    } else if (input.equals("disp P")) {
+    } else if (input.equals("dispPosition")) {
 
       controlMode = "Pos"; 
       drawFlowDisplay();
 
     // --- Display flow
-    } else if (input.equals("disp F")) {
+    } else if (input.equals("dispFlow")) {
 
       controlMode = "Flow"; 
       drawFlowDisplay();
 
     // --- Set position
-    } else if (input.substring(0, 1).equals("P")) {
-
-      moveTo(input.substring(2).toInt());
+    } else if (command.equals("setPosition")) {
+      moveTo(value.toInt());
+      Serial.println(command + ":"  + value);
 
     // --- Set flow
-    } else if (input.substring(0, 1).equals("F")) {
+    } else if (command.equals("setFlow")) {
 
       moveTo(flow2pos(input.substring(2).toFloat()));
+      Serial.println(command + ":"  + value);
 
     // --- Set a
-    } else if (input.substring(0, 1).equals("a")) {
+    } else if (command.equals("setA")) {
 
-       a = input.substring(2).toFloat();
+       a = value.toFloat();
        EEPROM.put(0, a);
        flow = pos2flow(pos);
        updateDisplay();
+       Serial.println(command + ":"  + value);
 
     // --- Set b
-    } else if (input.substring(0, 1).equals("b")) {
+    } else if (command.equals("setB")) {
 
-       b = input.substring(2).toFloat();
+       b = value.toFloat();
        EEPROM.put(sizeof(float), b);
        flow = pos2flow(pos);
        updateDisplay();
+       Serial.println(command + ":"  + value);
   
     }
     

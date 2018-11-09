@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-QT += widgets serialport printsupport
+QT += widgets serialport printsupport serialbus
 
 DESTDIR=build
 OBJECTS_DIR=build
@@ -23,6 +23,8 @@ SOURCES += main.cpp\
     Camera_FLIR.cpp \
     Frame_Writer.cpp \
     Serial_Master.cpp \
+    Shenchen_Pump.cpp \
+    Neslab_Rte.cpp \
     qcustomplot.cpp
 
 HEADERS  += mainwindow.h \
@@ -30,6 +32,8 @@ HEADERS  += mainwindow.h \
     Camera_FLIR.h \
     Frame_Writer.h \
     Serial_Master.h \
+    Shenchen_Pump.h \
+    Neslab_Rte.h \
     qcustomplot.h
 
 FORMS    += mainwindow.ui

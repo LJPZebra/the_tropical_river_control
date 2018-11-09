@@ -15,11 +15,11 @@ using namespace std;
 /**
  * \class Frame_Writer
  *
- * \brief The class Frame_Writer implementes an image writer with a buffer to save image on
+ * \brief The class Frame_Writer implements an image writer with a buffer to save image on
           the disk.
  *
- * \detailed This class implementes a QImageWriter object to write images on the  
-              disk, and a buffer allowing a constant speed acquision of image.      
+ * \detailed This class implements a QImageWriter object to write images on the  
+              disk, and a buffer allowing a constant speed acquisition image.      
               The Frame_Writer object needs to be run in it own thread. Image saving
               is thread safe but adding image in the buffer have to be done in a   
               thread safe manner (see below Frame_Writer_Wrapper that manages thread
@@ -91,10 +91,10 @@ public slots:
 /**
  * \class Frame_Writer_Wrapper
  *
- * \brief This class implementes a wrapper to use the Frame_Writer object and manages
+ * \brief This class implements a wrapper to use the Frame_Writer object and manages
           thread safety.
  *
- * \detailed This class implementes a wrapper for the Frame_Writer object. It allows 
+ * \detailed This class implements a wrapper for the Frame_Writer object. It allows 
              to create and manage easily the creation and destruction of a 
              Frame_Writer object in a thread safe manner.
  *
