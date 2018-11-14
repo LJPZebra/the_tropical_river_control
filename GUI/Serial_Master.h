@@ -12,15 +12,40 @@
 
 using namespace std;
 
-/**
-  *  structure to represent the image and all its informations
-*/
-struct SerialStruct {
-    /*@{*/
-     QString serialId;        /**< serial Id (see documentation on Arduino protocol standard) */
-     QSerialPort *serial;     /**< pointer to the QSerialPort object */
-     QString lastMessage;     /**< last message received from the serial */
-    /*@}*/
+
+class Serial_Device : public QObject {
+
+  Q_OBJECT
+
+private:
+  QString id;
+  QSerialPort *serial;
+
+public:
+  Serial_Device(QSerialPort* ser, QString serialId); 
+
+public slots:
+
+
+  /**
+    *\brief Waits for an answer for all connected devices, and, when a new message is received
+            emit a signal with the message and the id of the sender.
+  */
+  void readSerialMessage();
+
+  /**
+    *\brief Sends a command to the id serial.
+    *\param - QString - serialId is the id of the device.
+    *\param - QString - command is the command to send.
+  */
+  void sendSerialCommand(QString command);
+signals:
+  /**
+    *\brief This signal is triggered when a new message is received.
+    *\param - QString - serialId is the id of the device that has sent the message.
+    *\param - QString - message is the message received.
+  */
+  void newMessage(QString, QString);
 };
 
 
@@ -59,13 +84,10 @@ public:
     *\returns - QVector(QString) - A list of the id of connected Arduino devices.
   */
   QVector<QString> listSerials();
-  
-  
-  QMap<QString, SerialStruct> serialList;       // QMap to access the seria structure by the serial id
 
+  QMap<QString, Serial_Device*> serialList;  
+  
 
-private:
-  QMap<QString, QString> portNameToId;          // QMap to access the serial Id by the port name
 
 public slots:
   /**
@@ -73,18 +95,6 @@ public slots:
   */
   void checkSerialConnection();
 
-  /**
-    *\brief Waits for an answer for all connected devices, and, when a new message is received
-            emit a signal with the message and the id of the sender.
-  */
-  void readSerialMessage();
-
-  /**
-    *\brief Sends a command to the id serial.
-    *\param - QString - serialId is the id of the device.
-    *\param - QString - command is the command to send.
-  */
-  void sendSerialCommand(QString serialId, QString command);
 
   /**
     *\brief After connection to the serial asks for id and assign
@@ -95,17 +105,18 @@ public slots:
   */
   void getSerialId();
 
+  void sendSerialCommand(QString, QString);
   
-
 signals:
   /**
     *\brief This signal is triggered when a new message is received.
     *\param - QString - serialId is the id of the device that has sent the message.
     *\param - QString - message is the message received.
   */
-  void newMessage(QString serialId, QString message);
+  void newMessage(QString, QString);
+
 
 };
 
-#endif
 
+#endif

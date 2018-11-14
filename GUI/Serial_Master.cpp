@@ -1,9 +1,5 @@
 #include "Serial_Master.h"
 
-
-
-
-
 Serial_Master::Serial_Master() {
   checkSerialConnection();
 }
@@ -18,7 +14,6 @@ void Serial_Master::checkSerialConnection() {
   // Scan all devices connected and ask id serial if it is an Arduino and if it is not already open.
   for (int i = 0; i < infos.length(); i++) {
     // Note to dev: first version was with =="Arduino" but dev computer get "ARDUINO" 
-      qInfo() << "Opening" << infos[i].description();
     // Reimplemented with all lowercase, to be tested on another dev env.
     if ((infos[i].description().left(7).toLower() == "arduino") && !(infos[i].isBusy()) ) {
 
@@ -53,7 +48,6 @@ void Serial_Master::checkSerialConnection() {
 
 void Serial_Master::getSerialId() {
 
-  SerialStruct serialAssignment;                                            // Temporary structure that will be appending in a vector.
 
   QSerialPort* serial = qobject_cast<QSerialPort*>(sender());               // Find the object that emit the signal that trigger this method.
 
@@ -68,46 +62,21 @@ void Serial_Master::getSerialId() {
 
   qInfo() << " → " << serial->portName() << "is" << id;
 
-  // Assign to the struc that contains serial proprieties
-  serialAssignment.serialId = id;
-  serialAssignment.serial = serial;
-  serialAssignment.lastMessage = id;
+  Serial_Device *device = new Serial_Device(serial, id);
 
-  portNameToId[serial->portName()] = id;
-  serialList[id] = serialAssignment;
+  serialList.insert(id, device);
 
   disconnect(serial, SIGNAL(readyRead()), this, SLOT(getSerialId()));
-  connect(serial, SIGNAL(readyRead()), this, SLOT(readSerialMessage()));
+  connect(serial, SIGNAL(readyRead()), device, SLOT(readSerialMessage()));
+  connect(device, SIGNAL(newMessage(QString, QString)), this, SIGNAL(newMessage(QString, QString)));
 }
-
-
-void Serial_Master::readSerialMessage() {
-
-  QSerialPort* serial = qobject_cast<QSerialPort*>(sender());               // Find the object that emit the signal that trigger this method.
-
-  QByteArray readData = serial->readAll();
-  // Wait that the message is complete
-  while (serial->waitForReadyRead(0)) { 
-      readData.append(serial->readAll());
-  }
-  
-  QString message(readData);
-  message = message.split(QRegExp("[\r\n]"),QString::SkipEmptyParts).at(0); // Delete endline caracteres
-
-  QString id = portNameToId.value(serial->portName());                      // Get sender id by serial port name
-  serialList[id].lastMessage = message;
-  emit(newMessage(id, message)); 
-}
-
 
 void Serial_Master::sendSerialCommand(QString serialId, QString commande) {
-    
-  // If serial id exist, send command command to serial serialId
-  if(serialList.contains(serialId)){
-    serialList.value(QString(serialId)).serial->write(commande.toStdString().c_str());
-    serialList.value(serialId).serial->flush();
-  }
+    if(serialList.contains(serialId)){
+      serialList.value(serialId)->sendSerialCommand(commande.toStdString().c_str());
+    }
 }
+
 
 QVector<QString> Serial_Master::listSerials() {
 
@@ -116,4 +85,39 @@ QVector<QString> Serial_Master::listSerials() {
     serialListId.append(QString(i));
   }
   return serialListId;
+}
+
+
+
+/****************************************************************
+Serial_Device class
+***************************************************************/
+
+
+void Serial_Device::readSerialMessage() {
+
+
+  QByteArray readData = serial->readAll();
+  while (serial->waitForReadyRead(0)) { 
+      readData.append(serial->readAll());
+  }
+  QString message(readData);
+  // Replace message.split with message.remove for deleting endline characters because sometimes
+  // arduino send empty message with endline characteres that triggers a segmentation fault
+  // error.
+  message.remove(QRegExp("[\r\n]+"));
+
+  emit(newMessage(id, message)); 
+}
+
+
+void Serial_Device::sendSerialCommand(QString commande) {
+  serial->write(commande.toStdString().c_str());
+  serial->flush();
+}
+
+
+Serial_Device::Serial_Device(QSerialPort* ser, QString serialId) {
+  serial = ser;
+  id = serialId;
 }
