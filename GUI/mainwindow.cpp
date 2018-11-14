@@ -26,7 +26,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
     this->setWindowTitle(SetupName);
-
+    this->showFullScreen();
+    ui->emergencyStop->setStyleSheet("background-color: red");
+    connect(ui->emergencyStop, SIGNAL(clicked()), this, SLOT(emergencyStop()));
     // --- Set data path ------------------------
 
     ui->ProjectPath->setText(projPath);
@@ -103,23 +105,48 @@ MainWindow::MainWindow(QWidget *parent) :
 /*****************************************************************
                       SERIAL
 *****************************************************************/
+
+
     serial = new Serial_Master;
     connect(ui->CheckSerial, SIGNAL(clicked()), serial, SLOT(checkSerialConnection()));
     connect(ui->serialTerminalInput, SIGNAL(returnPressed()), this, SLOT(sendSerialTerminalDialogue()));
     connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(receivedSerialTerminalDialogue(QString, QString)));
     connect(this, SIGNAL(serialTerminalOutput(QString)), ui->serialTerminalOutput, SLOT(appendHtml(QString)));
+   
+   
     
     heater = new Neslab_Rte("/dev/ttyUSB0");
     heater->start();
-    connect(ui->temperatureHeater, SIGNAL(valueChanged(double)), heater, SLOT(setTemperature(double)));
+    heater->setTemperature(28);
     connect(ui->startHeater, SIGNAL(released()), heater, SLOT(start()));
     connect(ui->stopHeater, SIGNAL(released()), heater, SLOT(stop()));
-    measureTemperatureTimer = new QTimer(this);
-    connect(measureTemperatureTimer, &QTimer::timeout, [this] () {
-      serial->sendSerialCommand("river", "getTemperature");
-    } ); 
+
+
+
     connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(receivedTemperatureUpdate(QString, QString)));
-    measureTemperatureTimer->start(250);
+    QTimer::singleShot(2000, [=] {
+      serial->sendSerialCommand("river", "startTemperature");
+    });
+
+
+    temperaturePid = new Pid(-24.9, 80);
+    connect(ui->P_pid, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setP(double))); 
+    connect(ui->I_pid, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setI(double))); 
+    connect(ui->P_pid, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setP(double))); 
+    connect(ui->temperatureSet, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setTarget(double)));
+    connect(this, SIGNAL(temperatureUpdate(double)), temperaturePid, SLOT(computeSetPoint(double)));
+    connect(temperaturePid, SIGNAL(newSetPoint(double)), heater, SLOT(setTemperature(double))); 
+   
+   
+    
+    connect(ui->flowRate, static_cast<void (QDoubleSpinBox::*)(double)>(
+                                  &QDoubleSpinBox::valueChanged), [this]() {
+      QString command = "setFlow:" + QString::number(ui->flowRate->value());
+      serial->sendSerialCommand("fl1", command);
+    });
+    connect(ui->stopFlow, &QPushButton::clicked, [this]() {
+      serial->sendSerialCommand("fl1", "stop");
+    });
 }
 
 /*****************************************************************
@@ -162,9 +189,11 @@ void MainWindow::receivedSerialTerminalDialogue(QString serialId, QString messag
 
 
 void MainWindow::receivedTemperatureUpdate(QString serialId, QString message) {
-  if (serialId == "river"){
-    temperature = message.toDouble();
-    ui->temperatureMeasured->setText(message);
+  QStringList parsedMessage = message.split(":",QString::SkipEmptyParts);
+  if (serialId == "river" &&  parsedMessage.length() > 1 &&  parsedMessage.at(0) == "temperature" ){
+    temperature = parsedMessage.at(1).toDouble();
+    ui->temperatureMeasured->setText(parsedMessage.at(1));
+    emit(temperatureUpdate(temperature));
   }
 }
 
@@ -490,8 +519,19 @@ void MainWindow::parsingProtocolInstructions() {
 }
 
 
+void MainWindow::emergencyStop() {
+    heater->stop();
+    serial->sendSerialCommand("river", "stopTemperature");
+    serial->sendSerialCommand("fl1", "stop");
+    ui->ProtocolTime->setText("00:00:00");
+    ui->ProtocolTime->setStyleSheet("QLabel { color: black;}");
+    protocolInstructions.clear();
+    timerProtocol->stop();
+}
 
 MainWindow::~MainWindow() {
     delete heater;
+    serial->sendSerialCommand("river", "stopTemperature");
+    serial->sendSerialCommand("fl1", "stop");
     delete ui;
 }
