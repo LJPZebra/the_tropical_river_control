@@ -147,6 +147,17 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->stopFlow, &QPushButton::clicked, [this]() {
       serial->sendSerialCommand("fl1", "stop");
     });
+
+
+    connect(ui->speedPump, static_cast<void (QSpinBox::*)(int)>(
+                                  &QSpinBox::valueChanged), [this]() {
+      QString speed =  QString("setSpeed:" + QString::number(ui->speedPump->value()));
+      serial->sendSerialCommand("river", speed);
+    });
+    connect(ui->stopPump, &QPushButton::clicked, [this]() {
+      serial->sendSerialCommand("river", "stop");
+      ui->speedPump->setValue(0);
+    });
 }
 
 /*****************************************************************
@@ -193,6 +204,7 @@ void MainWindow::receivedTemperatureUpdate(QString serialId, QString message) {
   if (serialId == "river" &&  parsedMessage.length() > 1 &&  parsedMessage.at(0) == "temperature" ){
     temperature = parsedMessage.at(1).toDouble();
     ui->temperatureMeasured->setText(parsedMessage.at(1));
+    cout << parsedMessage.at(1).toStdString() << endl;
     emit(temperatureUpdate(temperature));
   }
 }
@@ -521,6 +533,7 @@ void MainWindow::parsingProtocolInstructions() {
 
 void MainWindow::emergencyStop() {
     heater->stop();
+    serial->sendSerialCommand("river", "stop");
     serial->sendSerialCommand("river", "stopTemperature");
     serial->sendSerialCommand("fl1", "stop");
     ui->ProtocolTime->setText("00:00:00");
@@ -531,6 +544,8 @@ void MainWindow::emergencyStop() {
 
 MainWindow::~MainWindow() {
     delete heater;
+    serial->sendSerialCommand("river", "stop");
+    QThread::msleep(250);
     serial->sendSerialCommand("river", "stopTemperature");
     serial->sendSerialCommand("fl1", "stop");
     delete ui;
