@@ -23,7 +23,7 @@ SOURCES += main.cpp\
     Camera_FLIR.cpp \
     Frame_Writer.cpp \
     Serial_Master.cpp \
-    Shenchen_Pump.cpp \
+    Pid.cpp \
     Neslab_Rte.cpp \
     qcustomplot.cpp
 
@@ -32,7 +32,7 @@ HEADERS  += mainwindow.h \
     Camera_FLIR.h \
     Frame_Writer.h \
     Serial_Master.h \
-    Shenchen_Pump.h \
+    Pid.h \
     Neslab_Rte.h \
     qcustomplot.h
 
