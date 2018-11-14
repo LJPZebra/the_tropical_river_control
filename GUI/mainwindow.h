@@ -25,7 +25,7 @@
 #include "Camera_FLIR.h"
 #include "Frame_Writer.h"
 #include "Serial_Master.h"
-#include "Shenchen_Pump.h"
+#include "Pid.h"
 #include "Neslab_Rte.h"
 
 // === Mainwindow class ====================================================
@@ -51,6 +51,7 @@ signals:
     void startSavingFrame();
     void sendFrame(Image_FLIR);
     void serialTerminalOutput(QString);
+    void temperatureUpdate(double);
 public slots:
     // Messages
     void UpdateMessage();
@@ -60,6 +61,9 @@ public slots:
     void BrowseProject();
     void autoset();
     void sendSerialTerminalDialogue(); 
+    
+    void emergencyStop();
+    
     /**
       *@brief parse the signal emit by the Camera to update the GUI
     */
@@ -133,8 +137,11 @@ private:
     double TargetLeftValue, TargetRightValue;
 
     // Temperature sensor
-    QTimer *measureTemperatureTimer;
     double temperature;
+
+    //Pid
+    Pid *temperaturePid;
+
 
     // Camera
     Camera_FLIR *Camera;
@@ -159,7 +166,6 @@ private:
     QTimer *timerProtocol;
     QString comment;
 
-    Shenchen_Pump *pump;
     // --- Methods ------------------------------
 
     // Serial communication
