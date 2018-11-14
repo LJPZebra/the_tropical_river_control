@@ -181,13 +181,13 @@ void loop() {
 
     // --- Set position
     } else if (command.equals("setPosition")) {
-      moveTo(value.toInt());
+      moveTo(value.toFloat());
       Serial.println(command + ":"  + value);
 
     // --- Set flow
     } else if (command.equals("setFlow")) {
 
-      moveTo(flow2pos(input.substring(2).toFloat()));
+      moveTo(flow2pos(value.toFloat()));
       Serial.println(command + ":"  + value);
 
     // --- Set a

@@ -5,19 +5,26 @@
 Adafruit_MCP4725 dac;
 Adafruit_MAX31856 max = Adafruit_MAX31856(10, 11, 12, 13);
 String id = "river";
+bool isTemperatureSensor = false;
 
 
 void setup(void) {
   Serial.begin(115200);
-  Serial.setTimeout(2);
+  Serial.setTimeout(10);
   dac.begin(0x62);
   max.begin();
 }
 
 
 void loop(void){  
-  if (Serial.available()) {
 
+  if (isTemperatureSensor) {
+    String msg = "temperature:" + String(max.readThermocoupleTemperature());
+    Serial.println(msg);
+    delay(1000);
+  }
+  
+  if (Serial.available()) {
     String input = Serial.readString();
     input.trim();
 
@@ -40,8 +47,11 @@ void loop(void){
    else if (command == "stop") {
       dac.setVoltage(0, false);
    }
-      else if (input == "getTemperature") {
-      Serial.println(max.readThermocoupleTemperature());
+   else if (input == "startTemperature") {
+      isTemperatureSensor = true;
+   }
+   else if (input == "stopTemperature") {
+      isTemperatureSensor = false;
    }
   }
 }
