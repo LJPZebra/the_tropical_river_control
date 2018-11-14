@@ -1,4 +1,7 @@
 #include "Neslab_Rte.h"
+#include <iostream>
+
+using namespace std;
 
 Neslab_Rte::Neslab_Rte(QString portName) {
 
@@ -59,12 +62,11 @@ void Neslab_Rte::stop() {
 }
 
 void Neslab_Rte::setTemperature(double temperature) {
+    cout << temperature << endl;
     QString cmd = "SS" + QString::number(temperature) + "\r";
     QByteArray command = cmd.toUtf8();
-    qInfo() << QString(command) << endl;
     serial->write(command);
     serial->flush(); 
-    QThread::msleep(5);
 }
 
 void Neslab_Rte::getTemperature() {
