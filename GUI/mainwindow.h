@@ -20,7 +20,7 @@
 #include <QImageWriter>
 #include <QFileDialog>
 
-#include "qcustomplot.h"
+#include "plotwindow.h"
 #include "MsgHandler.h"
 #include "Camera_FLIR.h"
 #include "Frame_Writer.h"
@@ -52,6 +52,7 @@ signals:
     void sendFrame(Image_FLIR);
     void serialTerminalOutput(QString);
     void temperatureUpdate(double);
+    void plotTemperature(double);
 public slots:
     // Messages
     void UpdateMessage();
@@ -132,9 +133,8 @@ private:
     Ui::MainWindow *ui;
     QShortcut *s_Close;
 
-    // Plots
-    QVector<double> Time, TempLeft, TempRight, TargetLeft, TargetRight;
-    double TargetLeftValue, TargetRightValue;
+    // Plots temperature window
+    PlotWindow *plotWindow;;
 
     // Temperature sensor
     double temperature;

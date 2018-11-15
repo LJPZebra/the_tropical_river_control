@@ -136,7 +136,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->temperatureSet, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setTarget(double)));
     connect(this, SIGNAL(temperatureUpdate(double)), temperaturePid, SLOT(computeSetPoint(double)));
     connect(temperaturePid, SIGNAL(newSetPoint(double)), heater, SLOT(setTemperature(double))); 
-   
+
+    plotWindow = new PlotWindow();
+    connect(ui->openPlot, &QPushButton::clicked, [this]() {
+      plotWindow->show();
+    });
+    connect(this, SIGNAL(plotTemperature(double)), plotWindow, SLOT(appendData(double)));
    
     
     connect(ui->flowRate, static_cast<void (QDoubleSpinBox::*)(double)>(
@@ -206,6 +211,7 @@ void MainWindow::receivedTemperatureUpdate(QString serialId, QString message) {
     ui->temperatureMeasured->setText(parsedMessage.at(1));
     cout << parsedMessage.at(1).toStdString() << endl;
     emit(temperatureUpdate(temperature));
+    emit(plotTemperature(temperature));
   }
 }
 
@@ -533,8 +539,9 @@ void MainWindow::parsingProtocolInstructions() {
 
 void MainWindow::emergencyStop() {
     heater->stop();
-    serial->sendSerialCommand("river", "stop");
     serial->sendSerialCommand("river", "stopTemperature");
+    QThread::msleep(250);
+    serial->sendSerialCommand("river", "stop");
     serial->sendSerialCommand("fl1", "stop");
     ui->ProtocolTime->setText("00:00:00");
     ui->ProtocolTime->setStyleSheet("QLabel { color: black;}");
@@ -544,9 +551,9 @@ void MainWindow::emergencyStop() {
 
 MainWindow::~MainWindow() {
     delete heater;
-    serial->sendSerialCommand("river", "stop");
-    QThread::msleep(250);
     serial->sendSerialCommand("river", "stopTemperature");
+    QThread::msleep(250);
+    serial->sendSerialCommand("river", "stop");
     serial->sendSerialCommand("fl1", "stop");
     delete ui;
 }

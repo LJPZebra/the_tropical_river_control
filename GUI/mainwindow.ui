@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>The Tropical River</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QTabWidget" name="tabWidget">
@@ -566,29 +566,6 @@
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-     <widget class="QSplitter" name="splitter_2">
-      <property name="geometry">
-       <rect>
-        <x>730</x>
-        <y>790</y>
-        <width>251</width>
-        <height>61</height>
-       </rect>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <widget class="QPushButton" name="startHeater">
-       <property name="text">
-        <string>Start</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="stopHeater">
-       <property name="text">
-        <string>Stop</string>
-       </property>
-      </widget>
-     </widget>
      <widget class="QSplitter" name="splitter_5">
       <property name="geometry">
        <rect>
@@ -606,19 +583,31 @@
         <string>P</string>
        </property>
       </widget>
-      <widget class="QDoubleSpinBox" name="P_pid"/>
+      <widget class="QDoubleSpinBox" name="P_pid">
+       <property name="maximum">
+        <double>9999.000000000000000</double>
+       </property>
+      </widget>
       <widget class="QLabel" name="label_5">
        <property name="text">
         <string>I</string>
        </property>
       </widget>
-      <widget class="QDoubleSpinBox" name="I_pid"/>
+      <widget class="QDoubleSpinBox" name="I_pid">
+       <property name="maximum">
+        <double>9999.899999999999636</double>
+       </property>
+      </widget>
       <widget class="QLabel" name="label_6">
        <property name="text">
         <string>D</string>
        </property>
       </widget>
-      <widget class="QDoubleSpinBox" name="D_pid"/>
+      <widget class="QDoubleSpinBox" name="D_pid">
+       <property name="maximum">
+        <double>9999.000000000000000</double>
+       </property>
+      </widget>
      </widget>
      <widget class="QSplitter" name="splitter_6">
       <property name="geometry">
@@ -639,10 +628,10 @@
       </widget>
       <widget class="QDoubleSpinBox" name="temperatureSet">
        <property name="minimum">
-        <double>-50.000000000000000</double>
+        <double>15.000000000000000</double>
        </property>
        <property name="maximum">
-        <double>50.000000000000000</double>
+        <double>35.000000000000000</double>
        </property>
        <property name="singleStep">
         <double>0.500000000000000</double>
@@ -750,6 +739,34 @@
       <widget class="QLabel" name="label_14">
        <property name="text">
         <string>rpm</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QSplitter" name="splitter_2">
+      <property name="geometry">
+       <rect>
+        <x>640</x>
+        <y>780</y>
+        <width>431</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QPushButton" name="startHeater">
+       <property name="text">
+        <string>Start</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="stopHeater">
+       <property name="text">
+        <string>Stop</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="openPlot">
+       <property name="text">
+        <string>Plot</string>
        </property>
       </widget>
      </widget>

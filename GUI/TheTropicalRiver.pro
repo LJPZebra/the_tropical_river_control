@@ -25,6 +25,7 @@ SOURCES += main.cpp\
     Serial_Master.cpp \
     Pid.cpp \
     Neslab_Rte.cpp \
+    plotwindow.cpp \
     qcustomplot.cpp
 
 HEADERS  += mainwindow.h \
@@ -34,9 +35,10 @@ HEADERS  += mainwindow.h \
     Serial_Master.h \
     Pid.h \
     Neslab_Rte.h \
+    plotwindow.h \
     qcustomplot.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui plotwindow.ui
 
 DISTFILES += \
     output.css \

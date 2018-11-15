@@ -62,7 +62,7 @@ void Neslab_Rte::stop() {
 }
 
 void Neslab_Rte::setTemperature(double temperature) {
-    cout << temperature << endl;
+    //cout << temperature << endl;
     QString cmd = "SS" + QString::number(temperature) + "\r";
     QByteArray command = cmd.toUtf8();
     serial->write(command);
