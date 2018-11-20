@@ -163,6 +163,24 @@ MainWindow::MainWindow(QWidget *parent) :
       serial->sendSerialCommand("river", "stop");
       ui->speedPump->setValue(0);
     });
+
+
+/*****************************************************************
+                      PROTOCOL EDITOR
+*****************************************************************/
+    connect(ui->openProtocol, SIGNAL(clicked()), this, SLOT(openProtocol())); 
+    connect(ui->ProtocolPath, SIGNAL(textChanged(QString)), this, SLOT(loadProtocol(QString))); 
+    connect(ui->newProtocol, &QPushButton::clicked, [this]() {
+      ui->protocolEditor->clear();
+    ui->protocolFile->clear();
+      currentProtocol.clear();
+    });
+    connect(ui->saveProtocol, &QPushButton::clicked, [this]() {
+      saveProtocol(currentProtocol);
+    });
+    connect(ui->saveAsProtocol, SIGNAL(clicked()), this, SLOT(saveAsProtocol())); 
+
+
 }
 
 /*****************************************************************
@@ -209,7 +227,6 @@ void MainWindow::receivedTemperatureUpdate(QString serialId, QString message) {
   if (serialId == "river" &&  parsedMessage.length() > 1 &&  parsedMessage.at(0) == "temperature" ){
     temperature = parsedMessage.at(1).toDouble();
     ui->temperatureMeasured->setText(parsedMessage.at(1));
-    cout << parsedMessage.at(1).toStdString() << endl;
     emit(temperatureUpdate(temperature));
     emit(plotTemperature(temperature));
   }
@@ -379,6 +396,46 @@ void MainWindow::snapshot() {
 }
 
 
+/*****************************Protocol Editor*****************************/
+
+void MainWindow::openProtocol() {
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open protocol file"), ui->ProjectPath->text() + "Data" + filesep + "Protocols", "Protocol files (*.protocol);; All files (*.*)");
+    if (!fileName.isEmpty()) {
+            loadProtocol(fileName);
+            currentProtocol = fileName;
+    }
+}
+
+void MainWindow::loadProtocol(const QString &fileName) {
+    QFile file(fileName);
+    ui->protocolFile->setText(fileName);
+    if (file.open(QFile::ReadOnly | QFile::Text)) {
+      QTextStream document(&file);
+      ui->protocolEditor->setPlainText(document.readAll());
+    }
+}
+
+void MainWindow::saveProtocol(const QString &fileName) {
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        QMessageBox::warning(this, tr("Application"),
+                             tr("Cannot write file %1:\n%2.")
+                             .arg(QDir::toNativeSeparators(fileName),
+                                  file.errorString()));
+    }
+
+    QTextStream out(&file);
+    out << ui->protocolEditor->toPlainText();
+}
+
+void MainWindow::saveAsProtocol() {
+
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Open protocol file"), ui->ProjectPath->text() + "Data" + filesep + "Protocols", "Protocol files (*.protocol);; All files (*.*)");
+    if (!fileName.isEmpty()) {
+            saveProtocol(fileName);
+    }
+}
+
 /* ====================================================================== *\
 |    PROTOCOLS                                                             |
 \* ====================================================================== */
@@ -540,7 +597,7 @@ void MainWindow::parsingProtocolInstructions() {
 void MainWindow::emergencyStop() {
     heater->stop();
     serial->sendSerialCommand("river", "stopTemperature");
-    QThread::msleep(250);
+    QThread::msleep(1500);                                    // Arduino temperature sensor rate
     serial->sendSerialCommand("river", "stop");
     serial->sendSerialCommand("fl1", "stop");
     ui->ProtocolTime->setText("00:00:00");
@@ -552,7 +609,7 @@ void MainWindow::emergencyStop() {
 MainWindow::~MainWindow() {
     delete heater;
     serial->sendSerialCommand("river", "stopTemperature");
-    QThread::msleep(250);
+    QThread::msleep(1500);
     serial->sendSerialCommand("river", "stop");
     serial->sendSerialCommand("fl1", "stop");
     delete ui;

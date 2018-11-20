@@ -119,6 +119,10 @@ public slots:
     // Images
     void snapshot();
 
+    void openProtocol();
+    void saveProtocol(const QString &fileName);
+    void loadProtocol(const QString &fileName);
+    void saveAsProtocol();
 
 private:
 
@@ -165,6 +169,8 @@ private:
     QTime protocolTime;
     QTimer *timerProtocol;
     QString comment;
+    QString currentProtocol;
+
 
     // --- Methods ------------------------------
 
