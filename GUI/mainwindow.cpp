@@ -1,14 +1,19 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+
+
+/**
+Constructor of the main class of the program that implementes the Ui
+and its connections with other objects of the program.
+*/
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow) {
 
-    // === DEFINITIONS =====================================================
-
     SetupName = "TheTropicalRiver";
 
-    // --- Pathes
+    // Paths definition of the project
+    // NOTE TO DEV: it is working but not readable, to clean
     filesep = QString(QDir::separator());
     progPath = QDir::currentPath() + filesep;
     projPath = QDir::currentPath();
@@ -16,37 +21,30 @@ MainWindow::MainWindow(QWidget *parent) :
     projPath = projPath.mid(0, projPath.toStdString().find_last_of(filesep.toStdString()));
     projPath = projPath.mid(0, projPath.toStdString().find_last_of(filesep.toStdString())) + filesep;
 
+    // Variables initialization
     nRun = 0;
     nFrame = 0;
     ImgComment = QString();
 
-    // === USER INTERFACE ==================================================
 
-    // --- Main window
-
+    // Ui setup from mainwindow.ui
     ui->setupUi(this);
     this->setWindowTitle(SetupName);
     this->showFullScreen();
     ui->emergencyStop->setStyleSheet("background-color: red");
-    connect(ui->emergencyStop, SIGNAL(clicked()), this, SLOT(emergencyStop()));
-    // --- Set data path ------------------------
-
     ui->ProjectPath->setText(projPath);
+    ui->SpawningDate->setDate(QDate::currentDate());
+    connect(ui->emergencyStop, SIGNAL(clicked()), this, SLOT(emergencyStop()));
     updatePath();
 
-    // --- Set date -----------------------------
 
-    ui->SpawningDate->setDate(QDate::currentDate());
-
-    // --- Shortcuts
-
-    // Esc: Close
+    // Defines shortcuts
     s_Close = new QShortcut(Qt::Key_Escape, this);
     connect(s_Close, SIGNAL(activated()), QApplication::instance(), SLOT(quit()));
 
-    // --- Messages -----------------------------
 
-    // Style
+    // Information console
+    // NOTE TO DEV: Trigerred an error in the qDebug console
     QFile File("output.css");
     File.open(QFile::ReadOnly);
     QTextDocument *OutDoc = new QTextDocument;
@@ -54,112 +52,132 @@ MainWindow::MainWindow(QWidget *parent) :
     OutDoc->setDefaultFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     ui->Output->setDocument(OutDoc);
 
-    // Timer
     QTimer *t_Msg = new QTimer();
     connect(t_Msg, SIGNAL(timeout()), this, SLOT(UpdateMessage()));
     t_Msg->start(50);
 
     qInfo() << TITLE_1 << "Initialization";
-
-    // Thread info
     qInfo().nospace() << THREAD << "Mainwindow lives in thread: " << QThread::currentThreadId();
-
-
-    // === Camera ==========================================================
-
     qInfo() << TITLE_2 << "Camera";
 
-    // Initialize Camera
+
+/*************************************************************************************
+                      CAMERA OBJECT
+*************************************************************************************/
+
+    // Camera initialization and connections
     initCamera();
 
-    // === Connections =====================================================
-
+    // From camera to ui
     connect(Camera, SIGNAL(refreshParameters(int, int)), this, SLOT(parsingRefreshedParameters(int, int)));
 
+    // From ui to camera
     connect(ui->ProjectPathButton, SIGNAL(clicked()), this, SLOT(BrowseProject()));
     connect(ui->Autoset, SIGNAL(clicked()), this, SLOT(autoset()));
     connect(ui->ProtocolPathButton, SIGNAL(clicked()), this, SLOT(browseProtocol()));
     connect(ui->ProtocolRun, SIGNAL(toggled(bool)), this, SLOT(readingProtocolFile()));
-
     connect(ui->Snapshot, SIGNAL(clicked()), this, SLOT(snapshot()));
     connect(ui->SpawningDate, SIGNAL(dateChanged(QDate)), this, SLOT(updateAge(QDate)));
 
+    // From objects to camera
+    connect(this, SIGNAL(temperatureUpdate(double)), this, SLOT(appendMetadata(double)));
 
 /*************************************************************************************
-                      FRAME_WRITER
+                      FRAME_WRITER OBJECT
 *************************************************************************************/
+    // Movie writer
     Writer = new Frame_Writer_Wrapper();
     connect(Camera, SIGNAL(newImageForDisplay(Image_FLIR)), Writer, SLOT(addFrame(Image_FLIR)));
 
+    // Snapshot writer
     ImgWriter = new QImageWriter;
     ImgWriter->setFormat("pgm");
-    // === Timers ==========================================================
 
-    // --- Protocol timer
+
+/*************************************************************************************
+                      PROTOCOL
+*************************************************************************************/
+
     timerProtocol = new QTimer(this);
     connect(timerProtocol, SIGNAL(timeout()), this, SLOT(displayingProtocolTime()));
 
-    // === Startup =========================================================
 
 
 /*****************************************************************
-                      SERIAL
+                      SERIAL OBJECTS
 *****************************************************************/
 
-
+    // Serial_Master object initialization. Manages connections with Arduino devices.
     serial = new Serial_Master;
     connect(ui->CheckSerial, SIGNAL(clicked()), serial, SLOT(checkSerialConnection()));
     connect(ui->serialTerminalInput, SIGNAL(returnPressed()), this, SLOT(sendSerialTerminalDialogue()));
     connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(receivedSerialTerminalDialogue(QString, QString)));
     connect(this, SIGNAL(serialTerminalOutput(QString)), ui->serialTerminalOutput, SLOT(appendHtml(QString)));
    
-   
-    
+
+
+    // Manages Neslab_Rte bath heater cooler 
     heater = new Neslab_Rte("/dev/ttyUSB0");
     heater->start();
-    heater->setTemperature(28);
+    heater->setTemperature(28.00);
     connect(ui->startHeater, SIGNAL(released()), heater, SLOT(start()));
     connect(ui->stopHeater, SIGNAL(released()), heater, SLOT(stop()));
 
 
 
+    // Manages temperature sensor from Arduino device connected throught Serial_Master
     connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(receivedTemperatureUpdate(QString, QString)));
-    QTimer::singleShot(2000, [=] {
+    QTimer::singleShot(2000, [=] {                           // Start temperature sensor
       serial->sendSerialCommand("river", "startTemperature");
     });
 
 
-    temperaturePid = new Pid(-24.9, 80);
+
+    // Manages PID controller to regulate temperature
+    // Initialized with (min, max) temperature of the Neslab bath heater cooler
+    temperaturePid = new Pid(-24, 90);
+    temperaturePid->setP(33.94);
+    temperaturePid->setI(1.80);
+    temperaturePid->setD(0.08);
+
+    // Ui to PID object
     connect(ui->P_pid, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setP(double))); 
     connect(ui->I_pid, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setI(double))); 
     connect(ui->P_pid, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setP(double))); 
     connect(ui->temperatureSet, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setTarget(double)));
+
+    // Send actual temperature and set point and received new set point
     connect(this, SIGNAL(temperatureUpdate(double)), temperaturePid, SLOT(computeSetPoint(double)));
     connect(temperaturePid, SIGNAL(newSetPoint(double)), heater, SLOT(setTemperature(double))); 
-
+   
+    
+   
+    // Manages the plot window to visualize the temperature 
     plotWindow = new PlotWindow();
     connect(ui->openPlot, &QPushButton::clicked, [this]() {
       plotWindow->show();
     });
     connect(this, SIGNAL(plotTemperature(double)), plotWindow, SLOT(appendData(double)));
+  
    
-    
-    connect(ui->flowRate, static_cast<void (QDoubleSpinBox::*)(double)>(
-                                  &QDoubleSpinBox::valueChanged), [this]() {
+  
+    // Manages flow controller inialized throught Serial_Master  
+    connect(ui->flowRate, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), [this]() { // Set flow rate
       QString command = "setFlow:" + QString::number(ui->flowRate->value());
       serial->sendSerialCommand("fl1", command);
     });
-    connect(ui->stopFlow, &QPushButton::clicked, [this]() {
+    connect(ui->stopFlow, &QPushButton::clicked, [this]() { // Stop flow
       serial->sendSerialCommand("fl1", "stop");
     });
 
 
-    connect(ui->speedPump, static_cast<void (QSpinBox::*)(int)>(
-                                  &QSpinBox::valueChanged), [this]() {
+
+    // Manages peristaltic pump initialized throught Serial_Master
+    connect(ui->speedPump, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), [this]() { // Set pump speed
       QString speed =  QString("setSpeed:" + QString::number(ui->speedPump->value()));
       serial->sendSerialCommand("river", speed);
     });
-    connect(ui->stopPump, &QPushButton::clicked, [this]() {
+    connect(ui->stopPump, &QPushButton::clicked, [this]() { // Stop pump
       serial->sendSerialCommand("river", "stop");
       ui->speedPump->setValue(0);
     });
@@ -170,9 +188,9 @@ MainWindow::MainWindow(QWidget *parent) :
 *****************************************************************/
     connect(ui->openProtocol, SIGNAL(clicked()), this, SLOT(openProtocol())); 
     connect(ui->ProtocolPath, SIGNAL(textChanged(QString)), this, SLOT(loadProtocol(QString))); 
-    connect(ui->newProtocol, &QPushButton::clicked, [this]() {
+    connect(ui->newProtocol, &QPushButton::clicked, [this]() { // Clear protocol editor and protocol path
       ui->protocolEditor->clear();
-    ui->protocolFile->clear();
+      ui->protocolFile->clear();
       currentProtocol.clear();
     });
     connect(ui->saveProtocol, &QPushButton::clicked, [this]() {
@@ -180,8 +198,15 @@ MainWindow::MainWindow(QWidget *parent) :
     });
     connect(ui->saveAsProtocol, SIGNAL(clicked()), this, SLOT(saveAsProtocol())); 
 
-
 }
+
+
+
+
+
+
+
+
 
 /*****************************************************************
                       SERIAL
@@ -232,9 +257,12 @@ void MainWindow::receivedTemperatureUpdate(QString serialId, QString message) {
   }
 }
 
+
+
 /* ====================================================================== *\
 |    MESSAGES                                                              |
 \* ====================================================================== */
+
 void MainWindow::parsingRefreshedParameters(int param1, int param2) {
     ui->Exposure->setValue(param1);
     ui->fps->setValue(param2);
@@ -396,6 +424,9 @@ void MainWindow::snapshot() {
 }
 
 
+void MainWindow::appendMetadata(double parameter) {
+  Camera->metadata = QString::number(parameter);
+}
 /*****************************Protocol Editor*****************************/
 
 void MainWindow::openProtocol() {

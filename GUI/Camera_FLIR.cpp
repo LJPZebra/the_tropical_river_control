@@ -251,6 +251,7 @@ void LowLevel_FLIR::grab() {
             FImg.timestamp = (qint64) chunkData.GetTimestamp();
             FImg.frameId = (qint64) chunkData.GetFrameID();
             FImg.gain = (qint64) chunkData.GetGain();
+            FImg.meta = metadata;
 
             int expo = (qint64) chunkData.GetExposureTime();
 //cout << FImg.timestamp << '\t' << expo << '\t' << Exposure <<  endl;
@@ -301,6 +302,7 @@ void Camera_FLIR::newCamera() {
     Camera->Width = X2-X1;
     Camera->Height = Y2-Y1;
     Camera->frameRate = frameRate;
+    Camera->metadata = metadata;
     tRefDisp = -1;
     tRefSave = -1;
 
@@ -339,16 +341,7 @@ void Camera_FLIR::newImage(Image_FLIR FImg) {
     if (tRefDisp==-1) { tRefDisp = FImg.timestamp; }
     if (tRefSave==-1) { tRefSave = FImg.timestamp; }
 
-    // --- Get image
-    //QPixmap Pixmap = QPixmap::fromImage(FImg.Img);
-
-    // --- Save image ? -------------------------------------------------
-
-    // --- Display image ? ----------------------------------------------
-
-    //if (FImg.timestamp-tRefDisp >= 1e9/DisplayRate) {
-        emit newImageForDisplay(FImg);
-    //}
+    emit newImageForDisplay(FImg);
 
 }
 

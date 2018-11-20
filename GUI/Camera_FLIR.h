@@ -33,6 +33,7 @@ struct Image_FLIR {
     qint64 timestamp; /**< Timestamp in nanoseconds */
     qint64 gain;  /**< Value of the gain when capturing the image */
     QImage Img; /**< Image in type QImage */
+    QString meta; /**< Metadata to append in the frame */
     /*@}*/
 };
 
@@ -77,6 +78,7 @@ public:
     int64_t Height;
     float frameRate;
     bool grabState;
+    QString metadata;
 
 public slots:
 
@@ -147,6 +149,7 @@ public:
     float Exposure;
     int X1, X2, Y1, Y2;
     float frameRate;
+    QString metadata;
 
     //Camera nformations
     int CamId;

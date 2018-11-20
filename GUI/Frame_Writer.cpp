@@ -50,7 +50,7 @@ void Frame_Writer::processBuffer(){
       QFile ImgFile(ImageWriter->fileName());
       if (ImgFile.open(QIODevice::WriteOnly | QIODevice::Append)) {
           QTextStream tmp(&ImgFile);
-          tmp << endl << "#" + QString("Timestamp:%1;TempLeft:%2;TempRight:%3").arg(timestamp);
+          tmp << endl << "#" + QString("Timestamp:%1;Temperature:%2").arg(timestamp).arg(frame.meta);
       }
 
       emit bufferSize(m_bufferSize);

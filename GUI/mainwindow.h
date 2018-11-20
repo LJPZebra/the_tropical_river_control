@@ -63,6 +63,7 @@ public slots:
     void autoset();
     void sendSerialTerminalDialogue(); 
     
+    void appendMetadata(double);
     void emergencyStop();
     
     /**
