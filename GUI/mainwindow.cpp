@@ -117,7 +117,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     // Manages Neslab_Rte bath heater cooler 
-    heater = new Neslab_Rte("/dev/ttyUSB0");
+    heater = new Neslab_Rte("/dev/ttyUSB2");
     heater->start();
     heater->setTemperature(28.00);
     connect(ui->startHeater, SIGNAL(released()), heater, SLOT(start()));
@@ -182,6 +182,13 @@ MainWindow::MainWindow(QWidget *parent) :
       ui->speedPump->setValue(0);
     });
 
+
+
+    // Manages valves opening closing for injection throught Serial_Master
+    connect(ui->valvesButton, &QPushButton::clicked, [this]() { // Stop pump
+      serial->sendSerialCommand("valves", "set");
+      ( ui->valvesButton->text() == "On" ) ? ui->valvesButton->setText("Off") : ui->valvesButton->setText("On"); 
+    });
 
 /*****************************************************************
                       PROTOCOL EDITOR
