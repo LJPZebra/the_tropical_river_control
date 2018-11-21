@@ -52,6 +52,7 @@ signals:
     void sendFrame(Image_FLIR);
     void serialTerminalOutput(QString);
     void temperatureUpdate(double);
+    void metadataUpdate(QString);
     void plotTemperature(double);
 public slots:
     // Messages
@@ -63,7 +64,6 @@ public slots:
     void autoset();
     void sendSerialTerminalDialogue(); 
     
-    void appendMetadata(double);
     void emergencyStop();
     
     /**

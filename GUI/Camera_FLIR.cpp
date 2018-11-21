@@ -83,6 +83,7 @@ void LowLevel_FLIR::display_info() {
 
 }
 
+
 /* === Frame grabber ================================================= */
 
 void LowLevel_FLIR::grab() {
@@ -251,7 +252,6 @@ void LowLevel_FLIR::grab() {
             FImg.timestamp = (qint64) chunkData.GetTimestamp();
             FImg.frameId = (qint64) chunkData.GetFrameID();
             FImg.gain = (qint64) chunkData.GetGain();
-            FImg.meta = metadata;
 
             int expo = (qint64) chunkData.GetExposureTime();
 //cout << FImg.timestamp << '\t' << expo << '\t' << Exposure <<  endl;
@@ -302,7 +302,6 @@ void Camera_FLIR::newCamera() {
     Camera->Width = X2-X1;
     Camera->Height = Y2-Y1;
     Camera->frameRate = frameRate;
-    Camera->metadata = metadata;
     tRefDisp = -1;
     tRefSave = -1;
 
@@ -318,7 +317,8 @@ void Camera_FLIR::newCamera() {
     // Connections
     connect(t_Cam, SIGNAL(started()), Camera, SLOT(grab()));
     connect(Camera, SIGNAL(refreshParameters(int, int)), this, SIGNAL(refreshParameters(int, int)));
-    connect(Camera, SIGNAL(newImage(Image_FLIR)), this, SLOT(newImage(Image_FLIR)));
+    connect(Camera, SIGNAL(newImage(Image_FLIR)), this, SLOT(insertMetadata(Image_FLIR)));
+    connect(this, SIGNAL(newMetadata(QString)), this, SLOT(updateMetadata(QString)));
     connect(t_Cam, &QThread::finished, Camera, &QObject::deleteLater);
 
     // Start the camera
@@ -326,6 +326,15 @@ void Camera_FLIR::newCamera() {
 }
 
 /* === Information display =========================================== */
+
+void Camera_FLIR::insertMetadata(Image_FLIR frame){
+  frame.meta = metadata;
+  emit(newImage(frame));
+}
+
+void Camera_FLIR::updateMetadata(QString meta){
+  metadata = meta;
+}
 
 void Camera_FLIR::display_info() { 
   //Update GUI

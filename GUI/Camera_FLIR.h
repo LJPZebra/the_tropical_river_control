@@ -94,7 +94,6 @@ public slots:
     */
     void grab();
 
-
 signals:
 
 
@@ -149,7 +148,6 @@ public:
     float Exposure;
     int X1, X2, Y1, Y2;
     float frameRate;
-    QString metadata;
 
     //Camera nformations
     int CamId;
@@ -173,14 +171,34 @@ public slots:
       *@brief Stop the camera
     */
     void stopCamera();
+    
+    /**
+      *@brief Inserts metadata in Image_FLIR structure
+      *@arg[in] structure Image_FLIR that contains the image and the image information 
+    */
+    void insertMetadata(Image_FLIR);
 
+    /**
+      *@brief Updates metadata when new metadata are available.
+      *@arg[in] QString - Metadata 
+    */
+    void updateMetadata(QString);
 signals:
 
     /**
       *@brief Send a QPixmap image to be displayed
     */
     void newImageForDisplay(Image_FLIR);
+
+    /**
+      *@brief Triggered when parameters are updated
+    */
     void refreshParameters(int, int);
+
+    /**
+      *@brief This signal is triggered when new metadata are available.
+    */
+    void newMetadata(QString);
 private:
 
     LowLevel_FLIR *Camera;
@@ -190,6 +208,7 @@ private:
     qint64 tRefDisp;
     qint64 tRefSave;
 
+    QString metadata;
 };
 
 #endif

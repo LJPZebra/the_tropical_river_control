@@ -80,7 +80,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->SpawningDate, SIGNAL(dateChanged(QDate)), this, SLOT(updateAge(QDate)));
 
     // From objects to camera
-    connect(this, SIGNAL(temperatureUpdate(double)), this, SLOT(appendMetadata(double)));
+    connect(this, SIGNAL(metadataUpdate(QString)), Camera, SIGNAL(newMetadata(QString)));
 
 /*************************************************************************************
                       FRAME_WRITER OBJECT
@@ -135,7 +135,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Manages PID controller to regulate temperature
     // Initialized with (min, max) temperature of the Neslab bath heater cooler
-    temperaturePid = new Pid(-24, 90);
+    temperaturePid = new Pid(18, 38);
     temperaturePid->setP(33.94);
     temperaturePid->setI(1.80);
     temperaturePid->setD(0.08);
@@ -194,7 +194,7 @@ MainWindow::MainWindow(QWidget *parent) :
       currentProtocol.clear();
     });
     connect(ui->saveProtocol, &QPushButton::clicked, [this]() {
-      saveProtocol(currentProtocol);
+      saveProtocol(ui->protocolFile->text());
     });
     connect(ui->saveAsProtocol, SIGNAL(clicked()), this, SLOT(saveAsProtocol())); 
 
@@ -253,6 +253,7 @@ void MainWindow::receivedTemperatureUpdate(QString serialId, QString message) {
     temperature = parsedMessage.at(1).toDouble();
     ui->temperatureMeasured->setText(parsedMessage.at(1));
     emit(temperatureUpdate(temperature));
+    emit(metadataUpdate(parsedMessage.at(1)));
     emit(plotTemperature(temperature));
   }
 }
@@ -424,9 +425,7 @@ void MainWindow::snapshot() {
 }
 
 
-void MainWindow::appendMetadata(double parameter) {
-  Camera->metadata = QString::number(parameter);
-}
+
 /*****************************Protocol Editor*****************************/
 
 void MainWindow::openProtocol() {
