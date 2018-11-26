@@ -7,22 +7,19 @@ Adafruit_MAX31856 max = Adafruit_MAX31856(10, 11, 12, 13);
 String id = "river";
 bool isTemperatureSensor = false;
 
+unsigned long previousMillis = 0;
 
 void setup(void) {
   Serial.begin(115200);
   Serial.setTimeout(10);
   dac.begin(0x62);
+  TWBR = 12;
   max.begin();
 }
 
 
 void loop(void){  
 
-  if (isTemperatureSensor) {
-    String msg = "temperature:" + String(max.readThermocoupleTemperature());
-    Serial.println(msg);
-    delay(1000);
-  }
   
   if (Serial.available()) {
     String input = Serial.readString();
@@ -44,8 +41,8 @@ void loop(void){
       double val = value.toDouble()*27.3;
       dac.setVoltage(val, false);
    }
-   else if (command == "stop") {
-      dac.setVoltage(0, false);
+   else if (input == "stop") {
+      dac.setVoltage(0., false);
    }
    else if (input == "startTemperature") {
       isTemperatureSensor = true;
@@ -53,5 +50,18 @@ void loop(void){
    else if (input == "stopTemperature") {
       isTemperatureSensor = false;
    }
+  }
+
+  unsigned long currentMillis = millis();
+  uint8_t fault = max.readFault();
+
+  // Non-blocking 
+  if( (currentMillis - previousMillis >= 100) && (isTemperatureSensor && !fault)) {
+    String msg = "temperature:" + String(max.readThermocoupleTemperature());
+    Serial.println(msg);
+    previousMillis = currentMillis;
+  }
+  else if(fault) {
+    Serial.println(-99999);
   }
 }
