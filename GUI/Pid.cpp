@@ -5,19 +5,23 @@ Pid::Pid(double min, double max) {
 
   m_maxLimit = max;
   m_minLimit = min;
+  m_p = 0;
+  m_i = 0;
+  m_d = 0;
 
 }
 
 void Pid::computeSetPoint(double current) {
 
+
   double error = m_target - current;
   
-  double derivative = error - m_error;
+  double derivative = (error - m_error)/(0.1/60.);
   m_error = error;
 
-  m_integral +=  error;
+  m_integral +=  error*(0.1/60.);
   
-  double setPoint = m_p*error + m_d*derivative + m_i*derivative;
+  double setPoint = m_p*error + m_d*derivative + m_i*m_integral;
 
   // Set the set point parameter in define range
   if (setPoint > m_maxLimit) {
@@ -28,6 +32,10 @@ void Pid::computeSetPoint(double current) {
   }
 
   emit(newSetPoint(setPoint));
+  std::cout << "Target   " << m_target << std::endl;
+  std::cout << "Current   " << current << std::endl;
+  m_setPoint = setPoint;
+  m_past = current;
 }
 
 

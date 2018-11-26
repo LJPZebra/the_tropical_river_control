@@ -2,6 +2,7 @@
 #define PID_H
 
 #include <QObject>
+#include <cmath>
 
 /**
  * \class Pid
@@ -24,7 +25,8 @@ private:
   double m_integral;
   double m_maxLimit;
   double m_minLimit;
-
+  double m_past;
+  double m_setPoint;
 
 public:
   double m_target;
