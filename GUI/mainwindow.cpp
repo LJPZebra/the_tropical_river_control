@@ -474,6 +474,7 @@ void MainWindow::saveAsProtocol() {
     QString fileName = QFileDialog::getSaveFileName(this, tr("Open protocol file"), ui->ProjectPath->text() + "Data" + filesep + "Protocols", "Protocol files (*.protocol);; All files (*.*)");
     if (!fileName.isEmpty()) {
             saveProtocol(fileName);
+            ui->protocolFile->setText(fileName);
     }
 }
 
