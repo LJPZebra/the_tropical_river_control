@@ -492,7 +492,9 @@ void MainWindow::readingProtocolFile() {
 
     if (ui->ProtocolRun->isChecked()) { // If button pressed one time to trigger the protocol start
 
+
         QFile *PFile = new QFile(ui->ProtocolPath->text());
+        
 
         if (!PFile->open(QIODevice::ReadOnly | QIODevice::Text)) {
             qWarning() << "Unable to load \"" << PFile->fileName() << "\"";
@@ -518,6 +520,7 @@ void MainWindow::readingProtocolFile() {
     
     else { // If button pressed a second time when the protocol is running
 
+        ui->statusBar->showMessage(QString("Last run: %1").arg(nRun, 2, 10, QLatin1Char('0')));
         ui->ProtocolTime->setText("00:00:00");
         ui->ProtocolTime->setStyleSheet("QLabel { color: black;}");
         protocolInstructions.clear();
@@ -547,14 +550,16 @@ void MainWindow::parsingProtocolInstructions() {
 // In the protocol file just write serialId::command::value
 
 
-    if (!protocolInstructions.count()) { // End of the protocol
-        ui->ProtocolRun->setChecked(false);
-        return;
+    // Parses the instruction, if it is in absolute time instruction[0] is the time and instruction[1] is the command.
+    // If it is in relative time instruction[0] is the command.
+    QStringList instructionParsed = protocolInstructions[0].split(QRegExp("->"));
+    QStringList list; // Command to parse
+    if (instructionParsed.length() == 1) {
+      list = instructionParsed[0].split(QRegExp(":+"));
     }
-
-    bool bcont = true;
-
-    QStringList list = protocolInstructions[0].split(QRegExp(":+"));
+    else if (instructionParsed.length() == 2) {
+      list = instructionParsed[1].split(QRegExp(":+"));
+    }
   
 
     if (list.at(0)=="print") { // Parse print instructions
@@ -627,11 +632,25 @@ void MainWindow::parsingProtocolInstructions() {
         qDebug() << "Unknown command:" << protocolInstructions[0];
       }
     }
-    // --- Remove first command
+
+    // Removes instruction already executed
     protocolInstructions.removeFirst();
 
-    // --- Continue
-    if (bcont) { parsingProtocolInstructions(); }
+    // End the protocol if instruction vector is empty
+    if (protocolInstructions.isEmpty()) {
+        ui->ProtocolRun->setChecked(false);
+    }
+    else { 
+      // If protocol in absolute time wait to execute next instruction else executes next instruction
+      QStringList nextInstruction = protocolInstructions[0].split(QRegExp("->"));
+      if (nextInstruction.length() == 2) {
+        int waitTime = 1000*(nextInstruction[0].toInt() - instructionParsed[0].toInt());
+        QTimer::singleShot(waitTime, this, SLOT(parsingProtocolInstructions()));
+      }
+      else {
+        parsingProtocolInstructions();
+      }
+    }
 }
 
 

@@ -127,7 +127,7 @@ public slots:
 
 private:
 
-    QElapsedTimer *counter;
+    QElapsedTimer *protocolCounter;
     qint64 tmp;
     QTimer* horloge;
     // --- Properties ---------------------------
