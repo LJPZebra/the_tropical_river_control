@@ -25,6 +25,11 @@ MainWindow::MainWindow(QWidget *parent) :
     nRun = 0;
     nFrame = 0;
     ImgComment = QString();
+    horloge = new QTimer;
+    connect(horloge, &QTimer::timeout, [this]() {
+      ui->horloge->setText(QTime::currentTime().toString(QString("hh:mm:ss")));
+    });
+    horloge->start(1000);
 
 
     // Ui setup from mainwindow.ui

@@ -129,6 +129,7 @@ private:
 
     QElapsedTimer *counter;
     qint64 tmp;
+    QTimer* horloge;
     // --- Properties ---------------------------
 
     // Files and folders
