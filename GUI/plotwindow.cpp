@@ -42,7 +42,6 @@ void PlotWindow::clearData() {
 
 void PlotWindow::refreshGraph() {
     ui->graph->xAxis->setRange(times.at(0), times.last());
-    cout << times.last() << endl;
     ui->graph->yAxis->setRange(15, 35);
     ui->graph->graph(0)->setData(times, temperatures);
     ui->graph->rescaleAxes();

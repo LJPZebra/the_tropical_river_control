@@ -117,7 +117,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     // Manages Neslab_Rte bath heater cooler 
-    heater = new Neslab_Rte("/dev/ttyUSB2");
+    heater = new Neslab_Rte("/dev/ttyUSB0");
     heater->start();
     heater->setTemperature(28.00);
     connect(ui->startHeater, SIGNAL(released()), heater, SLOT(start()));
@@ -167,7 +167,7 @@ MainWindow::MainWindow(QWidget *parent) :
       serial->sendSerialCommand("fl1", command);
     });
     connect(ui->stopFlow, &QPushButton::clicked, [this]() { // Stop flow
-      serial->sendSerialCommand("fl1", "stop");
+      ui->flowRate->setValue(0);
     });
 
 
@@ -178,7 +178,6 @@ MainWindow::MainWindow(QWidget *parent) :
       serial->sendSerialCommand("river", speed);
     });
     connect(ui->stopPump, &QPushButton::clicked, [this]() { // Stop pump
-      serial->sendSerialCommand("river", "stop");
       ui->speedPump->setValue(0);
     });
 
@@ -260,8 +259,8 @@ void MainWindow::receivedTemperatureUpdate(QString serialId, QString message) {
     temperature = parsedMessage.at(1).toDouble();
     ui->temperatureMeasured->setText(parsedMessage.at(1));
     emit(temperatureUpdate(temperature));
-    emit(metadataUpdate(parsedMessage.at(1)));
     emit(plotTemperature(temperature));
+    emit(metadataUpdate(parsedMessage.at(1)));
   }
 }
 
@@ -634,7 +633,7 @@ void MainWindow::parsingProtocolInstructions() {
 void MainWindow::emergencyStop() {
     heater->stop();
     serial->sendSerialCommand("river", "stopTemperature");
-    QThread::msleep(1500);                                    // Arduino temperature sensor rate
+    QThread::msleep(1500);                                    // Necessary if Arduino have a blocking program
     serial->sendSerialCommand("river", "stop");
     serial->sendSerialCommand("fl1", "stop");
     ui->ProtocolTime->setText("00:00:00");
