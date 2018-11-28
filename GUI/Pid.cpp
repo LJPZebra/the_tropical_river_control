@@ -56,3 +56,5 @@ void Pid::setD(double d) {
   m_d = d;
 }
 
+Pid::~Pid(){
+}

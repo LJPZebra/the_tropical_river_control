@@ -41,6 +41,7 @@ public:
     *\arg - double - minimal value allowed by the controller.
   */
   Pid(double min, double max);
+  ~Pid();
 
 public slots:
   /**

@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     nRun = 0;
     nFrame = 0;
     ImgComment = QString();
-    horloge = new QTimer;
+    horloge = new QTimer(this);
     connect(horloge, &QTimer::timeout, [this]() {
       ui->horloge->setText(QTime::currentTime().toString(QString("hh:mm:ss")));
     });
@@ -52,12 +52,12 @@ MainWindow::MainWindow(QWidget *parent) :
     // NOTE TO DEV: Trigerred an error in the qDebug console
     QFile File("output.css");
     File.open(QFile::ReadOnly);
-    QTextDocument *OutDoc = new QTextDocument;
+    QTextDocument *OutDoc = new QTextDocument(this);
     OutDoc->setDefaultStyleSheet(File.readAll());
     OutDoc->setDefaultFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     ui->Output->setDocument(OutDoc);
 
-    QTimer *t_Msg = new QTimer();
+    QTimer *t_Msg = new QTimer(this);
     connect(t_Msg, SIGNAL(timeout()), this, SLOT(UpdateMessage()));
     t_Msg->start(50);
 
@@ -95,7 +95,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(Camera, SIGNAL(newImageForDisplay(Image_FLIR)), Writer, SLOT(addFrame(Image_FLIR)));
 
     // Snapshot writer
-    ImgWriter = new QImageWriter;
+    ImgWriter = new QImageWriter();
     ImgWriter->setFormat("pgm");
 
 
@@ -113,7 +113,7 @@ MainWindow::MainWindow(QWidget *parent) :
 *****************************************************************/
 
     // Serial_Master object initialization. Manages connections with Arduino devices.
-    serial = new Serial_Master;
+    serial = new Serial_Master();
     connect(ui->CheckSerial, SIGNAL(clicked()), serial, SLOT(checkSerialConnection()));
     connect(ui->serialTerminalInput, SIGNAL(returnPressed()), this, SLOT(sendSerialTerminalDialogue()));
     connect(serial, SIGNAL(newMessage(QString, QString)), this, SLOT(receivedSerialTerminalDialogue(QString, QString)));
@@ -158,7 +158,7 @@ MainWindow::MainWindow(QWidget *parent) :
     
    
     // Manages the plot window to visualize the temperature 
-    plotWindow = new PlotWindow();
+    plotWindow = new PlotWindow(this);
     connect(ui->openPlot, &QPushButton::clicked, [this]() {
       plotWindow->show();
     });
@@ -673,5 +673,7 @@ MainWindow::~MainWindow() {
     QThread::msleep(1500);
     serial->sendSerialCommand("river", "stop");
     serial->sendSerialCommand("fl1", "stop");
+    delete serial;
+    delete temperaturePid;
     delete ui;
 }
