@@ -56,7 +56,7 @@ void loop(void){
   uint8_t fault = max.readFault();
 
   // Non-blocking 
-  if( (currentMillis - previousMillis >= 100) && (isTemperatureSensor && !fault)) {
+  if( (currentMillis - previousMillis >= 1000) && (isTemperatureSensor && !fault)) {
     String msg = "temperature:" + String(max.readThermocoupleTemperature());
     Serial.println(msg);
     previousMillis = currentMillis;

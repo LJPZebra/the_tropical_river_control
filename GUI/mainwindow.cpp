@@ -124,7 +124,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // Manages Neslab_Rte bath heater cooler 
     heater = new Neslab_Rte("/dev/ttyUSB0");
     heater->start();
-    heater->setTemperature(28.00);
     connect(ui->startHeater, SIGNAL(released()), heater, SLOT(start()));
     connect(ui->stopHeater, SIGNAL(released()), heater, SLOT(stop()));
 
@@ -144,6 +143,7 @@ MainWindow::MainWindow(QWidget *parent) :
     temperaturePid->setP(33.94);
     temperaturePid->setI(1.80);
     temperaturePid->setD(0.08);
+    temperaturePid->setTarget(28.00);
 
     // Ui to PID object
     connect(ui->P_pid, SIGNAL(valueChanged(double)), temperaturePid, SLOT(setP(double))); 
