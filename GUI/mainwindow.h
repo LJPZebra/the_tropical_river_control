@@ -12,6 +12,7 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QTimer>
+#include <QElapsedTimer>
 #include <QTime>
 #include <QFile>
 #include <QFontDatabase>
@@ -128,6 +129,7 @@ public slots:
 private:
 
     QElapsedTimer *protocolCounter;
+    QElapsedTimer *displayRefreshRate;
     qint64 tmp;
     QTimer* horloge;
     // --- Properties ---------------------------
@@ -158,7 +160,6 @@ private:
 
     // Run
     int saveRate;
-    QTimer *timerGrab;
     bool saveFrame;
     int nRun;
     qint64 nFrame;

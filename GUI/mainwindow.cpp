@@ -41,6 +41,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->SpawningDate->setDate(QDate::currentDate());
     connect(ui->emergencyStop, SIGNAL(clicked()), this, SLOT(emergencyStop()));
     updatePath();
+    displayRefreshRate = new QElapsedTimer();
+    displayRefreshRate->start();
 
 
     // Defines shortcuts
@@ -402,8 +404,12 @@ void MainWindow::updateCamera() {
 }
 
 void MainWindow::updateDisplay(Image_FLIR FImg) {
+  // Refresh the screen each 40 milliseconds
+  if ( displayRefreshRate->elapsed() > 40) {
   QPixmap pix = QPixmap::fromImage(FImg.Img);
-  ui->Image->setPixmap(pix);
+  ui->Image->setPixmap(pix.scaled(ui->Image->width(), ui->Image->height(), Qt::KeepAspectRatio));
+  displayRefreshRate->start();
+  }
 }
 
 

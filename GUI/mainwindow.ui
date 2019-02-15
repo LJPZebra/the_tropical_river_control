@@ -30,7 +30,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tabMain">
      <attribute name="title">
@@ -78,7 +78,7 @@
        <item row="1" column="0">
         <widget class="QLineEdit" name="DataPath">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -100,7 +100,11 @@
         </widget>
        </item>
        <item row="0" column="0">
-        <widget class="QLineEdit" name="ProjectPath"/>
+        <widget class="QLineEdit" name="ProjectPath">
+         <property name="text">
+          <string>/home/ljp/Science/Data/Projects/Behavior/TheTropicalRiver</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -296,7 +300,7 @@
           <number>1000000</number>
          </property>
          <property name="value">
-          <number>40</number>
+          <number>10</number>
          </property>
         </widget>
        </item>

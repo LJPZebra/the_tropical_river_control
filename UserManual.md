@@ -61,7 +61,7 @@ In this protocol the camera will start, then the flow rate is set to 10, 1 secon
 
 #### Write protocol with absolute time
 
-The time (since the beginning of the protocol) at which the instruction must be executed is indicated before the instruction as time->instruction.
+The time in seconds (since the beginning of the protocol) at which the instruction must be executed is indicated before the instruction as time->instruction.
 
 ```camera::start
 0->camera::start
@@ -141,3 +141,9 @@ The connection of a non Arduino device has to be manually added in the source co
 A console to talk to devices (only Arduino automatically detected) is available in the terminal panel. You can list connected devices by taping **ls serial**. All commands allowed by the devices are available. For example if you want to set the flow rate of a device named **fl** that has a **setFlowRate** method just type:
 
 ```fl::setFlowRate:20``` 
+
+## To do
+
+- Temperature manual control without PID.
+- Off set in the PID temperature.
+- Camera display widget auto-resize but conserving aspect ratio. 
