@@ -35,9 +35,9 @@ MainWindow::MainWindow(QWidget *parent) :
     // Ui setup from mainwindow.ui
     ui->setupUi(this);
     this->setWindowTitle(SetupName);
-    this->showFullScreen();
+    //this->showFullScreen();
     ui->emergencyStop->setStyleSheet("background-color: red");
-    ui->ProjectPath->setText(projPath);
+    //ui->ProjectPath->setText(projPath);
     ui->SpawningDate->setDate(QDate::currentDate());
     connect(ui->emergencyStop, SIGNAL(clicked()), this, SLOT(emergencyStop()));
     updatePath();
@@ -381,7 +381,7 @@ void MainWindow::initCamera() {
     connect(ui->UpdateCamera, SIGNAL(released()), this, SLOT(updateCamera()));
     connect(Camera, SIGNAL(newImageForDisplay(Image_FLIR)), this, SLOT(updateDisplay(Image_FLIR)));
 
-    this->armCamera();
+    armCamera();
 
 }
 
@@ -400,15 +400,17 @@ void MainWindow::armCamera() {
 void MainWindow::updateCamera() {
 
     Camera->stopCamera();
-    this->armCamera();
+    armCamera();
 }
 
 void MainWindow::updateDisplay(Image_FLIR FImg) {
   // Refresh the screen each 40 milliseconds
   if ( displayRefreshRate->elapsed() > 40) {
-  QPixmap pix = QPixmap::fromImage(FImg.Img);
-  ui->Image->setPixmap(pix.scaled(ui->Image->width(), ui->Image->height(), Qt::KeepAspectRatio));
-  displayRefreshRate->start();
+    if (!FImg.Img.isNull()) {
+      QPixmap pix = QPixmap::fromImage(FImg.Img);
+      ui->Image->setPixmap(pix.scaled(ui->Image->width(), ui->Image->height(), Qt::KeepAspectRatio));
+    }
+    displayRefreshRate->start();
   }
 }
 

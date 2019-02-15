@@ -235,16 +235,13 @@ void LowLevel_FLIR::grab() {
 
             Image_FLIR FImg;
 
-            // --- Get image and convert to QImage
+            // --- Get image and COPY to QImage to avoid segmentation fault on the camera restart
             unsigned char* Raw = (unsigned char*)pImg->GetData();
-            FImg.Img = QImage(Raw, pImg->GetWidth(), pImg->GetHeight(), QImage::Format_Indexed8);
+            FImg.Img = QImage(Raw, pImg->GetWidth(), pImg->GetHeight(), QImage::Format_Indexed8).copy();
 
 
             // Set colors of the QImage
             for (unsigned int i=0 ; i<=255; i++) { FImg.Img.setColor(i, qRgb(i,i,i)); }
-
-            // Mirror the image
-            FImg.Img = FImg.Img.mirrored(true, true); //IF DELETED THE CAMERA CANNOT BE RESTART
 
             // --- Get ChunkData
             ChunkData chunkData = pImg->GetChunkData();
