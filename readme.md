@@ -1,10 +1,10 @@
-# User Manual The Tropical River
+# User Manual The_Tropical_River control software
 
 ## Writing a protocol
 
-Two mains protocol writing style are available:
+Two mains protocol writing styles are available:
 
-- Relative time: instructions separated by a waiting time in milliseconds.
+- Relative time: instructions separated by waiting times in milliseconds.
 
 - Absolute time: instructions executed at a given time in seconds since the start of the protocol.
 
@@ -13,9 +13,9 @@ Two mains protocol writing style are available:
 
 The Tropical River comes with build-in serial integrated in the Ui:
 
-- heater: controles the river temperature via a PID.
+- heater: control the river temperature via a PID.
 - river: temperature sensor and peristaltic pump control.
-- valves: switches valves to inject product or water in the injector.
+- valves: switches valves to inject products or water in the injector.
 - fl1: control the flow rate inside The Tropical River.
 
 Any Arduino device that follows the sketch standard (see below) can be connected add-on. Get the list of all Arduino devices connected by port series by taping in the serial terminal panel:
@@ -40,7 +40,7 @@ To communicate directly with the device types:
 3. To control a serial device:
     ```serialId::command:value```
 
-4. To create a directory to save image, protocol and parameter files:
+4. To create a directory to save image, protocol, and parameter files:
 
     ```data::create directory```
 
@@ -72,17 +72,17 @@ The time in seconds (since the beginning of the protocol) at which the instructi
 
 #### Notes
 
-Do not mix the two writing style!
+Do not mix the two writing styles!
 
 ### Example
 
-For example if you want to record an experiment where the flow rate is set to 1 L/s during 6 seconds:
+For example, if you want to record an experiment where the flow rate is set to 1 L/s during 6 seconds:
 
 ```
 # Example protocol in relative time
 print::Starting protocol...
 
-# Create directory and save parameter and protocol files
+# Create a directory and save parameter and protocol files
 data::create directory
 
 # Start images recording
@@ -106,7 +106,7 @@ print::Protocol ended
 # Example protocol in absolute time
 t0->print::Starting protocol...
 
-# Create directory and save parameter and protocol files
+# Create a directory and save parameter and protocol files
 t0->data::create directory
 
 # Start images recording
@@ -132,18 +132,18 @@ The connection of an Arduino device is automatic if it follows this guideline:
 1. The Arduino serial server has to have a **getId** method that gives an id to the device.
 2. The Arduino serial server has to accept input as **command:value** or **command** if no value are needed.
 
-### Non Arduino device
+### Non-Arduino device
 
-The connection of a non Arduino device has to be manually added in the source code (see for example the Neslab_Rte class).
+The connection of a non-Arduino device has to be manually added in the source code (see for example the Neslab_Rte class).
 
 ## Serial terminal
 
-A console to talk to devices (only Arduino automatically detected) is available in the terminal panel. You can list connected devices by taping **ls serial**. All commands allowed by the devices are available. For example if you want to set the flow rate of a device named **fl** that has a **setFlowRate** method just type:
+A console to talk to devices (only Arduino automatically detected) is available in the terminal panel. You can list connected devices by taping **ls serial**. All commands allowed by the devices are available. For example, if you want to set the flow rate of a device named **fl** that has a **setFlowRate** method just type:
 
 ```fl::setFlowRate:20``` 
 
-## To do
+## Todo
 
 - Temperature manual control without PID.
-- Off set in the PID temperature.
+- Offset in the PID temperature.
 - Camera display widget auto-resize but conserving aspect ratio. 
