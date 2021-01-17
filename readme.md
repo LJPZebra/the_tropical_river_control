@@ -11,8 +11,7 @@ Two mains protocol writing styles are available:
 
 ### Serials
 
-The Tropical River comes with build-in serial integrated in the Ui:
-
+The Tropical River comes with build-in serial devices integrated into the UI:
 - heater: control the river temperature via a PID.
 - river: temperature sensor and peristaltic pump control.
 - valves: switches valves to inject products or water in the injector.
@@ -40,7 +39,7 @@ To communicate directly with the device types:
 3. To control a serial device:
     ```serialId::command:value```
 
-4. To create a directory to save image, protocol, and parameter files:
+4. To create a directory to save images, protocol, and parameter files:
 
     ```data::create directory```
 
@@ -57,7 +56,7 @@ wait::1000
 fl1::stop
 ```
 
-In this protocol the camera will start, then the flow rate is set to 10, 1 second later it is set to 20, and then 1 second later it will stop.
+In this protocol, the camera will start, then the flow rate is set to 10, 1 second later it is set to 20, and then 1 second later it will stop.
 
 #### Write protocol with absolute time
 
@@ -76,7 +75,7 @@ Do not mix the two writing styles!
 
 ### Example
 
-For example, if you want to record an experiment where the flow rate is set to 1 L/s during 6 seconds:
+For example, if you want to record an experiment where the flow rate is set to 1 L/s for 6 seconds:
 
 ```
 # Example protocol in relative time
@@ -130,15 +129,15 @@ t6->print:Protocol ended
 The connection of an Arduino device is automatic if it follows this guideline:
 
 1. The Arduino serial server has to have a **getId** method that gives an id to the device.
-2. The Arduino serial server has to accept input as **command:value** or **command** if no value are needed.
+2. The Arduino serial server has to accept input as **command:value** or **command** if no value is needed.
 
 ### Non-Arduino device
 
-The connection of a non-Arduino device has to be manually added in the source code (see for example the Neslab_Rte class).
+A non-Arduino device's connection has to be manually added in the source code (see, for example, the Neslab_Rte class).
 
 ## Serial terminal
 
-A console to talk to devices (only Arduino automatically detected) is available in the terminal panel. You can list connected devices by taping **ls serial**. All commands allowed by the devices are available. For example, if you want to set the flow rate of a device named **fl** that has a **setFlowRate** method just type:
+A console to talk to devices (only Arduino automatically detected) is available in the terminal panel. You can list connected devices by taping **ls serial**. All commands allowed by the devices are available. For example, if you want to set the flow rate of a device named **fl** that has a **setFlowRate** method, just type:
 
 ```fl::setFlowRate:20``` 
 
@@ -146,4 +145,4 @@ A console to talk to devices (only Arduino automatically detected) is available 
 
 - Temperature manual control without PID.
 - Offset in the PID temperature.
-- Camera display widget auto-resize but conserving aspect ratio. 
+- Camera display widget auto-resize but conserving the aspect ratio. 
